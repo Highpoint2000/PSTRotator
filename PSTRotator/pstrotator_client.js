@@ -48,6 +48,7 @@
                 position: relative;
                 top: -33px;
                 left: -13px;
+
             }
             #innerCircle {
                 top: 50%;
@@ -58,14 +59,7 @@
                 border-radius: 50%;
                 background-color: rgba(255, 255, 255, 0);
                 cursor: pointer;
-                display: none;
-            }
-            #position {
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                font-size: 15px;
-                color: #333;
+                display: none;		
             }
         `;
         document.head.appendChild(style);
@@ -128,7 +122,7 @@
             addHtmlElements(); // Add HTML elements
 
             const canvas = $('#CanvasRotator')[0];
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d');	
 
             let x = canvas.width / 2;
             let y = canvas.height / 2;
@@ -146,7 +140,7 @@
                 ctx.stroke();
                 ctx.closePath();
 
-                ctx.font = 'bold 20px Calibri';
+                ctx.font = 'bold 18px Titillium Web, Calibri, sans-serif';
                 ctx.fillStyle = '#ED7D31';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
