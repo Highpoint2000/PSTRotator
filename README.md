@@ -11,7 +11,7 @@
 3. Unpack the pstrotator_server.js from the server folder into the web server folder (..fm-dx-webserver-main\server)
 4. Add the line: "require('./pstrotator_server');" into ..fm-dx-webserver-main\server\index.js 
    ![image](https://github.com/user-attachments/assets/d0336049-5dfa-4238-9d25-506c3188e6f1)
-5. run npm install
+5. run "npm install" on node.js console
 6. Set up port forwarding for port 3000 to the web server
 7. 
 8. Restart the server
