@@ -5,33 +5,27 @@
 
 ## Version 1.0 
 
+This plugin provides a graphical azimuth representation (rotor view) for the FM-DX web server.
+
 ## Installation notes:
 
 1. [Download]([https://github.com/Highpoint2000/PSTRotator/releases]) the last repository as a zip
-2. Unpack the PSTRotator.js and the PSTRotator folder with the pstrotator_client.js into the web server plugins folder (..fm-dx-webserver-main\plugins)
-3. Unpack the pstrotator_server.js from the server folder into the web server folder (..fm-dx-webserver-main\server)
-4. Add the line: "require('./pstrotator_server');" into ..fm-dx-webserver-main\server\index.js 
+3. Unpack the PSTRotator.js and the PSTRotator folder with the pstrotator_client.js into the web server plugins folder (..fm-dx-webserver-main\plugins)
+4. Unpack the pstrotator_server.js from the server folder into the web server folder (..fm-dx-webserver-main\server)
+5. Add the line: "require('./pstrotator_server');" into ..fm-dx-webserver-main\server\index.js 
    ![image](https://github.com/user-attachments/assets/d0336049-5dfa-4238-9d25-506c3188e6f1)
-5. run "npm install" on node.js console
-6. Set up port forwarding for TCP port 3000 to the web server
-7. 
-8. Restart the server
-9. Activate the plugin it in the settings
+6. run "npm install" on node.js console
+7. Enable the web server in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
+8. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
+9. Set up port forwarding for TCP port 3000 on your firewall/router for access to the websocket/cors proxy on your fm-dx-webserver
+10. Start/Restart the fm-dx-webserver (npm run webserver), check the console informations
+11. Activate the PSTRotator plugin it in the settings 
 
-This plugin provides email Alerts for DX Receiption with the FM-DX web server.
 
 ## Notes: 
 
-To use the plugin, you must enter a valid email address in the script header. You also have the option of entering a notification interval in minutes (minimum is 5 minutes) as well as a distance in km (minimum is 150 km) from when the plugin should notify you. The plugin can only be activated as an authenticated user or as an admin. After logging in, you can send a test email to the registered address by pressing and holding the DX-Alert button. Since this is a purely client-related application, the browser must not be closed during the indication! The plugin is a useful addition to the [scanner plugin](https://github.com/Highpoint2000/webserver-scanner) so that you are always informed if the reception conditions change positively!
+In order to use the plugin sensibly, you need a remote-capable rotor and the Pst Rotator software, which provides a web server. There are currently complications with the weather plugin because it is located directly above the rotor display. If you still don't want to do without it, you should adapt the following lines in frontend.js (weather plugin script):
+![image](https://github.com/user-attachments/assets/7e27a78f-cc59-4d1e-9a0b-cc93a6a18139)
+This will move the weather plugin a little to the left and no longer overlay the rotor.
 
-Please note:
 
-- The plugin does not log receptions. Only the first station found, above the entered kilometer limit and time interval, will be sent with detailed information as an indication of overreach!
-- In order not to receive too many emails (SPAM) and still not miss any DX receptions, it is recommended to set the time limit to 60 minutes and higher
-- If you activate the alert button, you will also receive an email if another user of the web server receives DX stations while zapping
-
-## History: 
-
-## Version 1.0 (only works from web server version 1.2.3 !!!)
-
-- email Alert for DX Receiption
