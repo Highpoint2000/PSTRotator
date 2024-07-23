@@ -9,7 +9,7 @@
 /////////////////////////////////////////////////////////////
 
 const port = 3000; // Port for the CORS Proxy and WebSocket server
-const PSTRotatorUrl = 'http://10.9.0.66:80'; // Base URL (http://IP:Port) for the PST Rotator software
+const PSTRotatorUrl = 'http://127.0.0.1:80'; // Base URL (http://IP:Port) for the PST Rotator software
 
 /////////////////////////////////////////////////////////////
 
