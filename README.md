@@ -24,7 +24,7 @@ This plugin provides a graphical azimuth representation (rotor view) for the FM-
 
 ## Notes: 
 
-In order to use the plugin sensibly, you need a remote-capable rotor and the Pst Rotator software, which provides a web server. There are currently complications with the weather plugin because it is located directly above the rotor display. If you still don't want to do without it, you should adapt the following lines in frontend.js (weather plugin script):
+In order to use the plugin sensibly, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/), which provides a web server. There are currently complications with the weather plugin because it is located directly above the rotor display. If you still don't want to do without it, you should adapt the following lines in frontend.js (weather plugin script):
 ![image](https://github.com/user-attachments/assets/7e27a78f-cc59-4d1e-9a0b-cc93a6a18139)
 This will move the weather plugin a little to the left and no longer overlay the rotor.
 
