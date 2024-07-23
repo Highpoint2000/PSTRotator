@@ -25,29 +25,26 @@
         // Add CSS styles
         const style = document.createElement('style');
         style.textContent = `
-            .canvas-container {
-                display: flex;
-                align-items: center;
-            }
             #signal-canvas {
                 width: 81%;
             }
-            #container {
-                position: relative;
-                margin-left: 10px; /* Space between the two containers */
+            #containerRotator {
+				position: relative;
+				margin-top: -13%;
+                margin-left: 82%; 
             }
-            #background {
+            #backgroundRotator {
                 position: absolute;      
                 width: 220px;
                 height: 265px;
             }
-            #background img {
+            #backgroundRotator img {
                 height: 90%;
                 margin-top: -60px;
                 margin-left: 0px;
                 object-fit: cover;
             }
-            #myCanvas {
+            #CanvasRotator {
                 position: relative;
                 top: -33px;
                 left: -13px;
@@ -75,35 +72,35 @@
 
         // Function to dynamically add HTML elements
         function addHtmlElements() {
-            const canvasContainer = document.querySelector('.canvas-container');
-            if (canvasContainer) {
+            const canvascontainerRotator = document.querySelector('.canvas-container');
+            if (canvascontainerRotator) {
                 console.log('Found .canvas-container element.');
 
-                // Check if the container already exists
-                if (!document.getElementById('container')) {
-                    const container = document.createElement('div');
-                    container.id = 'container';
-                    container.innerHTML = `
+                // Check if the containerRotator already exists
+                if (!document.getElementById('containerRotator')) {
+                    const containerRotator = document.createElement('div');
+                    containerRotator.id = 'containerRotator';
+                    containerRotator.innerHTML = `
                         <div class="hide-phone">
-                            <div id="background">
+                            <div id="backgroundRotator">
                                 <img src="${IMAGE_URL}" alt="Background Image">
                             </div>
-                            <canvas id="myCanvas" width="225" height="225"></canvas>
+                            <canvas id="CanvasRotator" width="225" height="225"></canvas>
                             <div id="innerCircle" title="View Bearing Map"></div>
                         </div>
                     `;
 
-                    canvasContainer.appendChild(container);
+                    canvascontainerRotator.appendChild(containerRotator);
                     console.log('HTML elements added successfully.');
 
-                    let $serverInfoContainer = $('#tuner-name').parent();
-                    $serverInfoContainer.removeClass('panel-100').addClass('panel-75').css('padding-left', '20px');
+                    let $serverInfocontainerRotator = $('#tuner-name').parent();
+                    $serverInfocontainerRotator.removeClass('panel-100').addClass('panel-75').css('padding-left', '20px');
 
                 } else {
-                    // Container already exists; no action needed
+                    // containerRotator already exists; no action needed
                 }
             } else {
-                console.error('Element with class "canvas-container" not found');
+                console.error('Element with class "tuner-info" not found');
             }
         }
 
@@ -130,7 +127,7 @@
 
             addHtmlElements(); // Add HTML elements
 
-            const canvas = $('#myCanvas')[0];
+            const canvas = $('#CanvasRotator')[0];
             const ctx = canvas.getContext('2d');
 
             let x = canvas.width / 2;
