@@ -9,18 +9,22 @@
 /////////////////////////////////////////////////////////////
 
 (() => {
+    // Extract WebserverURL and WebserverPORT from the current page URL
+    const currentURL = new URL(window.location.href);
+    const WebserverURL = currentURL.hostname; // Get the hostname from the current URL
+    const WebserverPORT = currentURL.port; // Get the port from the current URL 
+    const WebsocketPORT = '3000'; // PORT for Websocket/CORS Proxy
+
+    // Configuration variables
+    const JQUERY_VERSION = '3.6.0'; // Version of jQuery to use
+    const WEBSOCKET_URL = `ws://${WebserverURL}:${WebsocketPORT}`; // WebSocket URL
+    const JQUERY_URL = `https://code.jquery.com/jquery-${JQUERY_VERSION}.min.js`; // URL for jQuery
+    const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}/js/plugins/PSTRotator/Rotor.png`; // URL for background image
+
     const PSTRotatorPlugin = (() => {
         // Add CSS styles
         const style = document.createElement('style');
         style.textContent = `
-            body {
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                position: relative;
-            }
             .canvas-container {
                 display: flex;
                 align-items: center;
@@ -39,15 +43,14 @@
             }
             #background img {
                 height: 90%;
-				margin-top: -60px;
-				margin-left: 0px;
+                margin-top: -60px;
+                margin-left: 0px;
                 object-fit: cover;
             }
             #myCanvas {
                 position: relative;
-				top: -33px;
+                top: -33px;
                 left: -13px;
-         
             }
             #innerCircle {
                 top: 50%;
@@ -76,14 +79,14 @@
             if (canvasContainer) {
                 console.log('Found .canvas-container element.');
 
-                // Check if container already exists
+                // Check if the container already exists
                 if (!document.getElementById('container')) {
                     const container = document.createElement('div');
                     container.id = 'container';
                     container.innerHTML = `
                         <div class="hide-phone">
                             <div id="background">
-                                <img src="http://highpoint2000.selfhost.de:8080/Rotor/Rotor.png" alt="Background Image">
+                                <img src="${IMAGE_URL}" alt="Background Image">
                             </div>
                             <canvas id="myCanvas" width="225" height="225"></canvas>
                             <div id="innerCircle" title="View Bearing Map"></div>
@@ -92,19 +95,19 @@
 
                     canvasContainer.appendChild(container);
                     console.log('HTML elements added successfully.');
-					
-					let $serverInfoContainer = $('#tuner-name').parent();
-					$serverInfoContainer.removeClass('panel-100').addClass('panel-75').css('padding-left', '20px');
-										
+
+                    let $serverInfoContainer = $('#tuner-name').parent();
+                    $serverInfoContainer.removeClass('panel-100').addClass('panel-75').css('padding-left', '20px');
+
                 } else {
-                    // console.log('#container already exists.');
+                    // Container already exists; no action needed
                 }
             } else {
                 console.error('Element with class "canvas-container" not found');
             }
         }
 
-        // Load jQuery
+        // Load a script dynamically
         function loadScript(url, callback) {
             const script = document.createElement('script');
             script.src = url;
@@ -125,7 +128,7 @@
                 return;
             }
 
-            addHtmlElements();
+            addHtmlElements(); // Add HTML elements
 
             const canvas = $('#myCanvas')[0];
             const ctx = canvas.getContext('2d');
@@ -136,6 +139,7 @@
             let lineAngle = 26;
             const lineLength = 74;
 
+            // Function to draw the circle and lines on the canvas
             function drawCircleAndLines() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.beginPath();
@@ -164,17 +168,18 @@
                 ctx.closePath();
             }
 
+            // Function to establish WebSocket connection
             function loadWebSocket() {
-                const ws = new WebSocket('ws://highpoint2000.selfhost.de:3000');
+                const ws = new WebSocket(WEBSOCKET_URL);
 
                 ws.onopen = () => {
-                    console.log('WebSocket connection highpoint2000.selfhost.de:3000 established');
+                    console.log('WebSocket connection to ' + WEBSOCKET_URL + ' established');
                 };
 
                 ws.onmessage = (event) => {
                     try {
                         const position = event.data.trim();
-                        
+
                         if (isNaN(position)) {
                             throw new Error('Invalid position data received');
                         }
@@ -204,8 +209,8 @@
             loadWebSocket();
         }
 
-        // Load jQuery and execute main script
-        loadScript('https://code.jquery.com/jquery-3.6.0.min.js', main);
+        // Load jQuery and execute the main script
+        loadScript(JQUERY_URL, main);
 
     })();
 })();
