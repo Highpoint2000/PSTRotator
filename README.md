@@ -1,6 +1,7 @@
 # PST Rotator Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/user-attachments/assets/4f29aba0-92ec-4a84-8b32-7f2a8a9b3d89)
+![image](https://github.com/user-attachments/assets/dffecdad-8a67-496f-a88c-f97db8ec5a89)
+
 
 ## Version 1.0 
 
