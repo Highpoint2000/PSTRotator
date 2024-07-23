@@ -4,7 +4,7 @@
 ///                                                       ///
 ///  by Highpoint                last update: 23.07.24    ///
 ///                                                       ///
-///  https://github.com/Highpoint2000/PSTRotator   		  ///
+///  https://github.com/Highpoint2000/PSTRotator          ///
 ///                                                       ///
 /////////////////////////////////////////////////////////////
 
