@@ -28,4 +28,6 @@ In order to use the plugin sensibly, you need a remote-capable rotor and the [PS
 ![image](https://github.com/user-attachments/assets/7e27a78f-cc59-4d1e-9a0b-cc93a6a18139)
 This will move the weather plugin a little to the left and no longer overlay the rotor.
 
+Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
+
 
