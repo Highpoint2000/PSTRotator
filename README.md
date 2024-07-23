@@ -19,7 +19,7 @@ This plugin provides a graphical azimuth representation (rotor view) for the FM-
 8. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
 9. Set up port forwarding for TCP port 3000 on your firewall/router for access to the websocket/cors proxy on your fm-dx-webserver
 10. Start/Restart the fm-dx-webserver (npm run webserver), check the console informations
-11. Activate the PSTRotator plugin it in the settings 
+11. Activate the PSTRotator plugin it in the settings, check the browser console informations 
 
 
 ## Notes: 
