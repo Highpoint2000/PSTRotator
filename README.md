@@ -3,24 +3,24 @@
 ![image](https://github.com/user-attachments/assets/dffecdad-8a67-496f-a88c-f97db8ec5a89)
 
 
-## Version 1.0 
+## Version 1.0 (only works with webserver version 1.2.5 !!!)
 
 This plugin provides a graphical azimuth representation (rotor view) for the FM-DX web server.
 
 ## Installation notes:
 
 1. [Download]([https://github.com/Highpoint2000/PSTRotator/releases]) the last repository as a zip
-3. Unpack the PSTRotator.js and the PSTRotator folder with the pstrotator_client.js + rotor.png into the web server plugins folder (..fm-dx-webserver-main\plugins)
-4. Unpack the pstrotator_server.js from the server folder into the web server folder (..fm-dx-webserver-main\server)
-5. Add the line: "require('./pstrotator_server');" into ..fm-dx-webserver-main\server\index.js 
+3. Unpack plugins directory (PSTRotator.js and the PSTRotator folder) into the web server plugins folder (..fm-dx-webserver-main\plugins)
+4. Unpack server directory (pstrotator_server.js) into the web server folder (..fm-dx-webserver-main\server)
+5. Unpack and Overwrite the package.json into the web server folder (..fm-dx-webserver-main)
+6. Add the line: "require('./pstrotator_server');" into ..fm-dx-webserver-main\server\index.js 
    ![image](https://github.com/user-attachments/assets/d0336049-5dfa-4238-9d25-506c3188e6f1)
-6. run "npm install" on node.js console
-7. Enable the web server in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
-8. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
-9. Set up port forwarding for TCP port 3000 on your firewall/router for access to the websocket/cors proxy on your fm-dx-webserver
-10. Start/Restart the fm-dx-webserver (npm run webserver), check the console informations
-11. Activate the PSTRotator plugin it in the settings, check the browser console informations 
-
+7. run "npm install" on node.js console
+8. Enable the web server in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
+9. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
+10. Set up port forwarding for TCP port 3000 on your firewall/router for access to the websocket/cors proxy on your fm-dx-webserver
+11. Start/Restart the fm-dx-webserver with "npm run webserver", check the console informations
+12. Activate the PSTRotator plugin it in the settings, check the browser console informations 
 
 ## Notes: 
 
