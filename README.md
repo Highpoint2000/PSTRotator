@@ -1,8 +1,8 @@
 # PST Rotator Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
+This plugin provides a graphical azimuth representation (rotor view) for the FM-DX web server.
+
 ![image](https://github.com/user-attachments/assets/0252e07c-fa2b-41a9-a1ea-e44aa49f1cf3)
-
-
 
 ## Version 1.1 (only works with webserver version 1.2.5 !!!)
 
