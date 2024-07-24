@@ -1,11 +1,13 @@
 # PST Rotator Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/user-attachments/assets/dffecdad-8a67-496f-a88c-f97db8ec5a89)
+![image](https://github.com/user-attachments/assets/0252e07c-fa2b-41a9-a1ea-e44aa49f1cf3)
 
 
-## Version 1.0 (only works with webserver version 1.2.5 !!!)
 
-This plugin provides a graphical azimuth representation (rotor view) for the FM-DX web server.
+## Version 1.1 (only works with webserver version 1.2.5 !!!)
+
+- theme-specific design
+- visually improved messages in the node.js console
 
 ## Installation notes:
 
@@ -30,4 +32,8 @@ This will move the weather plugin a little to the left and no longer overlay the
 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
+## History: 
 
+### Version 1.0 (only works with webserver version 1.2.5 !!!)
+
+This plugin provides a graphical azimuth representation (rotor view) for the FM-DX web server.
