@@ -6,7 +6,7 @@ This plugin provides a graphical azimuth representation (rotor view) for the FM-
 
 ## Version 1.2 (only works with webserver version 1.2.6 !!!)
 
-- Bidirectional communication via your own websocket channel (no port forwarding is needed!)
+- Bidirectional communication via own websocket channel (no port forwarding is needed!)
 
 ## Installation notes:
 
