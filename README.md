@@ -12,7 +12,7 @@ This plugin provides a graphical azimuth representation (rotor view) for the FM-
 
 1. [Download]([https://github.com/Highpoint2000/PSTRotator/releases]) the last repository as a zip
 3. Unpack plugins directory (PSTRotator.js and the PSTRotator folder) into the web server plugins folder (..fm-dx-webserver-main\plugins)
-4. Unpack server directory (pstrotator_server.js) into the web server folder (..fm-dx-webserver-main\server)
+4. Unpack server directory (pstrotator_server.js and index.js) into the web server folder (..fm-dx-webserver-main\server)
 5. npm install -g jsdom
 6. Enable the web server in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
 7. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
