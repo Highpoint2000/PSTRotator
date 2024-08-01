@@ -1,23 +1,30 @@
-/////////////////////////////////////////////////////////////
-///                                                       ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.1) ///
-///                                                       ///
-///  by Highpoint                last update: 24.07.24    ///
-///                                                       ///
-///  https://github.com/Highpoint2000/PSTRotator          ///
-///                                                       ///
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+///                                                        ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.2)  ///
+///                                                        ///
+///  by Highpoint                last update: 01.08.24     ///
+///                                                        ///
+///  https://github.com/Highpoint2000/PSTRotator           ///
+///                                                        ///
+//////////////////////////////////////////////////////////////
+
+/// only works from webserver version 1.2.6 !!!
 
 (() => {
+    const plugin_version = '1.2'; // Plugin Version
+    
     // Extract WebserverURL and WebserverPORT from the current page URL
     const currentURL = new URL(window.location.href);
     const WebserverURL = currentURL.hostname;
-    const WebserverPORT = currentURL.port;
-    const WebsocketPORT = '3000'; // PORT for Websocket/CORS Proxy
+    let WebserverPORT = currentURL.port || (currentURL.protocol === 'https:' ? '443' : '80'); // Default ports if not specified
+
+    // Determine WebSocket protocol and port
+    const protocol = currentURL.protocol === 'https:' ? 'wss:' : 'ws:'; // Determine WebSocket protocol
+    const WebsocketPORT = WebserverPORT; // Use the same port as HTTP/HTTPS
+    const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}/extra`; // WebSocket URL with /extra
 
     // Configuration variables
     const JQUERY_VERSION = '3.6.0'; // Version of jQuery to use
-    const WEBSOCKET_URL = `ws://${WebserverURL}:${WebsocketPORT}`; // WebSocket URL
     const JQUERY_URL = `https://code.jquery.com/jquery-${JQUERY_VERSION}.min.js`; // URL for jQuery
     const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}/js/plugins/PSTRotator/Rotor.png`; // URL for background image
 
@@ -27,16 +34,30 @@
     let lineAngle = 26;
     const lineLength = 74;
 
+    let ipAddress; // Global variable to store the IP address
+
+    async function fetchIpAddress() {
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            return data.ip;
+        } catch (error) {
+            console.error('Failed to fetch IP address:', error);
+            return 'unknown'; // Fallback value
+        }
+    }
+
     const PSTRotatorPlugin = (() => {
         // Add CSS styles
         const style = document.createElement('style');
         style.textContent = `
             #signal-canvas {
                 width: 81%;
+                height: 100%;
             }
             #containerRotator {
                 position: relative;
-                margin-top: -13%;
+                margin-top: -15%;
                 margin-left: 82%; 
             }
             #backgroundRotator {
@@ -56,15 +77,14 @@
                 left: -13px;
             }
             #innerCircle {
-                top: 50%;
-                left: 50%;
+                position: relative;
+                top: -145px;
+                left: 100px;
                 transform: translate(-50%, -50%);
-                width: 25px;
-                height: 25px;
+                width: 45px;
+                height: 45px;
                 border-radius: 50%;
-                background-color: rgba(255, 255, 255, 0);
-                cursor: pointer;
-                display: none;		
+                cursor: pointer;    
             }
         `;
         document.head.appendChild(style);
@@ -85,17 +105,18 @@
                                 <img src="${IMAGE_URL}" alt="Background Image">
                             </div>
                             <canvas id="CanvasRotator" width="225" height="225"></canvas>
-                            <div id="innerCircle" title="View Bearing Map"></div>
+                            <div id="innerCircle" title="Plugin Version: ${plugin_version}"></div>
                         </div>
                     `;
 
                     canvascontainerRotator.appendChild(containerRotator);
                     console.log('HTML elements added successfully.');
 
-                    let $serverInfocontainerRotator = $('#tuner-name').parent();
-                    $serverInfocontainerRotator.removeClass('panel-100').addClass('panel-75').css('padding-left', '20px');
-                } else {
-                    // containerRotator already exists; no action needed
+                    // Check window width before modifying CSS
+                    if (window.innerWidth > 768) {
+                        let $serverInfocontainerRotator = $('#tuner-name').parent();
+                        $serverInfocontainerRotator.removeClass('panel-100').addClass('panel-75').css('padding-left', '20px');
+                    }
                 }
             } else {
                 console.error('Element with class "canvas-container" not found');
@@ -150,28 +171,56 @@
             ctx.closePath();
         }
 
-        // Function to establish WebSocket connection
+        // Function to process WebSocket message
         function loadWebSocket() {
             const ws = new WebSocket(WEBSOCKET_URL);
 
-            ws.onopen = () => {
+            ws.onopen = async () => {
                 console.log('WebSocket connection to ' + WEBSOCKET_URL + ' established');
+
+                // Fetch IP address and send the initial request
+                ipAddress = await fetchIpAddress();
+                const requestPayload = JSON.stringify({
+                    type: 'rotor',
+                    value: 'request',
+                    source: ipAddress
+                });
+                ws.send(requestPayload);
+                console.log('Sent:', requestPayload);
             };
 
             ws.onmessage = (event) => {
                 try {
-                    const position = event.data.trim();
+                    const data = JSON.parse(event.data); // Parse the JSON data
 
-                    if (isNaN(position)) {
-                        throw new Error('Invalid position data received');
-                    }
+                    // Only process messages where type is "rotor"
+                    if (data.type === 'rotor') {
+                        // Skip messages from the own IP address
+                        if (data.source === ipAddress) {
+                            //console.log('Ignoring message from own IP address:', data);
+                            return;
+                        }
 
-                    if (position >= 0 && position <= 360) {
-                        lineAngle = position - 90;
-                        drawCircleAndLines();
-                    } else {
-                        console.warn('Received position is out of range:', position);
+						console.log('Received:', data);
+
+                        // Extract position from JSON data
+                        const position = parseFloat(data.value);
+
+                        // Check if position is a valid number
+                        if (isNaN(position)) {
+                            console.error('Received position is not a valid number:', data.value);
+                            return; // Abort processing
+                        }
+
+                        // Check if position is within valid range
+                        if (position >= 0 && position <= 360) {
+                            lineAngle = position - 90;
+                            drawCircleAndLines();
+                        } else {
+                            console.warn('Received position is out of range:', position);
+                        }
                     }
+                    // All other messages are ignored
                 } catch (error) {
                     console.error('Error processing WebSocket message:', error);
                 }
