@@ -4,25 +4,21 @@ This plugin provides a graphical azimuth representation (rotor view) for the FM-
 
 ![image](https://github.com/user-attachments/assets/fd030189-c855-4303-94fc-ca3df8946c8d)
 
-## Version 1.1 (only works with webserver version 1.2.5 !!!)
+## Version 1.2 (only works with webserver version 1.2.6 !!!)
 
-- theme-specific design
-- visually improved messages in the node.js console
+- Bidirectional communication via your own websocket channel (no port forwarding is needed!)
 
 ## Installation notes:
 
 1. [Download]([https://github.com/Highpoint2000/PSTRotator/releases]) the last repository as a zip
 3. Unpack plugins directory (PSTRotator.js and the PSTRotator folder) into the web server plugins folder (..fm-dx-webserver-main\plugins)
 4. Unpack server directory (pstrotator_server.js) into the web server folder (..fm-dx-webserver-main\server)
-5. Unpack and Overwrite the package.json into the web server folder (..fm-dx-webserver-main)
-6. Add the line: "require('./pstrotator_server');" into ..fm-dx-webserver-main\server\index.js 
-   ![image](https://github.com/user-attachments/assets/d0336049-5dfa-4238-9d25-506c3188e6f1)
-7. run "npm install" on node.js console
-8. Enable the web server in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
-9. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
-10. Set up port forwarding for TCP port 3000 on your firewall/router for access to the websocket/cors proxy on your fm-dx-webserver
-11. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
-12. Activate the PSTRotator plugin it in the settings, check the browser console informations 
+5. npm install -g jsdom
+6. Enable the web server in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
+7. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
+8. Edit the line "const externalWsUrl = 'ws://127.0.0.1:8080/extra"; in the pstrotator_server.js and enter the Port of your FM-DX webserver
+9. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
+10. Activate the PSTRotator plugin it in the settings, check the browser console informations 
 
 ## Notes: 
 
@@ -33,6 +29,11 @@ This will move the weather plugin a little to the left and no longer overlay the
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History: 
+
+## Version 1.1 (only works with webserver version 1.2.5 !!!)
+
+- theme-specific design
+- visually improved messages in the node.js console
 
 ### Version 1.0 (only works with webserver version 1.2.5 !!!)
 
