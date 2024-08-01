@@ -28,7 +28,6 @@ const storage = require('./storage');
 const { serverConfig, configExists } = require('./server_config');
 const pjson = require('../package.json');
 require('./pstrotator_server');
-require('./rxinfrastructure.js');
 
 console.log(`\x1b[32m
  _____ __  __       ______  __ __        __   _                                  
@@ -451,7 +450,6 @@ rdsWss.on('connection', (ws, request) => {
 });
 
 
-//ExtraWss.binaryType = 'text'; // Setzt den Typ der empfangenen Daten auf Text
 ExtraWss.on('connection', (ws, request)  => { 
     ws.on('message', message => {
 
@@ -474,8 +472,6 @@ ExtraWss.on('connection', (ws, request)  => {
         logError('WebSocket Extra error: ' + error); // Use custom logError function
     });
 });
-
-
 
 // Websocket register for /text, /audio and /chat paths 
 httpServer.on('upgrade', (request, socket, head) => {
