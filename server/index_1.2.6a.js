@@ -13,6 +13,7 @@ const wss = new WebSocket.Server({ noServer: true });
 const chatWss = new WebSocket.Server({ noServer: true });
 const rdsWss = new WebSocket.Server({ noServer: true });
 const ExtraWss = new WebSocket.Server({ noServer: true });
+const fs = require('fs');
 const path = require('path');
 const net = require('net');
 const client = new net.Socket();
@@ -27,7 +28,24 @@ const { logDebug, logError, logInfo, logWarn, logChat } = require('./console');
 const storage = require('./storage');
 const { serverConfig, configExists } = require('./server_config');
 const pjson = require('../package.json');
-require('./pstrotator_server');
+
+// Dynamically require *_server.js files for server-side plugins
+function findServerFiles(dir) {
+  let results = [];
+  fs.readdirSync(dir).forEach(file => {
+    const fullPath = path.join(dir, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      results = results.concat(findServerFiles(fullPath));
+    } else if (file.endsWith('_server.js')) {
+      results.push(fullPath);
+    }
+  });
+  return results;
+}
+
+const pluginsDir = path.join(__dirname, '..', 'plugins');
+findServerFiles(pluginsDir).forEach(require);
+
 
 console.log(`\x1b[32m
  _____ __  __       ______  __ __        __   _                                  
