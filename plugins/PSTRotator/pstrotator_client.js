@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////
 ///                                                        ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.2)  ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.3)  ///
 ///                                                        ///
-///  by Highpoint                last update: 01.08.24     ///
+///  by Highpoint                last update: 04.08.24     ///
 ///                                                        ///
 ///  https://github.com/Highpoint2000/PSTRotator           ///
 ///                                                        ///
@@ -11,8 +11,14 @@
 /// only works from webserver version 1.2.6 !!!
 
 (() => {
-    const plugin_version = '1.2'; // Plugin Version
-    
+    const plugin_version = '1.3'; // Plugin Version
+
+    // Global variable to store the IP address
+    let ipAddress;
+
+    // Flag to indicate whether authentication is successful
+    let isTuneAuthenticated = false;
+
     // Extract WebserverURL and WebserverPORT from the current page URL
     const currentURL = new URL(window.location.href);
     const WebserverURL = currentURL.hostname;
@@ -33,8 +39,9 @@
     const radius = 25;
     let lineAngle = 26;
     const lineLength = 74;
-
-    let ipAddress; // Global variable to store the IP address
+    let canvas; // Canvas element
+    let tooltip; // Tooltip element
+    let ws; // WebSocket instance
 
     async function fetchIpAddress() {
         try {
@@ -44,6 +51,19 @@
         } catch (error) {
             console.error('Failed to fetch IP address:', error);
             return 'unknown'; // Fallback value
+        }
+    }
+
+    function checkAdminMode() {
+        const bodyText = document.body.textContent || document.body.innerText;
+        const isAdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as an adminstrator.");
+
+        if (isAdminLoggedIn) {
+            console.log(`Admin mode found. PSTRotator Plugin Authentication successful.`);
+            isTuneAuthenticated = true;
+        } else {
+            console.log("No authentication. Authentication failed.");
+            isTuneAuthenticated = false;
         }
     }
 
@@ -59,6 +79,11 @@
                 position: relative;
                 margin-top: -15%;
                 margin-left: 82%; 
+                opacity: 0; /* Initially hidden */
+                transition: opacity 0.5s ease-in-out; /* Smooth fade-in effect */
+            }
+            #containerRotator.visible {
+                opacity: 1; /* Visible after fade-in */
             }
             #backgroundRotator {
                 position: absolute;      
@@ -85,6 +110,19 @@
                 height: 45px;
                 border-radius: 50%;
                 cursor: pointer;    
+            }
+            #tooltip {
+                position: absolute;
+                background: none; 
+                color: white; 
+                padding: 5px;
+                border-radius: 3px;
+                font-size: 18px;
+                font-family: Titillium Web, Calibri, sans-serif;
+                font-weight: bold;
+                pointer-events: none; 
+                display: none; 
+                white-space: nowrap; 
             }
         `;
         document.head.appendChild(style);
@@ -121,6 +159,11 @@
             } else {
                 console.error('Element with class "canvas-container" not found');
             }
+
+            // Create and append the tooltip element
+            tooltip = document.createElement('div');
+            tooltip.id = 'tooltip';
+            document.body.appendChild(tooltip);
         }
 
         // Load a script dynamically
@@ -132,11 +175,6 @@
                 console.error(`Failed to load script: ${url}`);
             };
             document.head.appendChild(script);
-        }
-
-        // Function to get the current color from CSS
-        function getCurrentColor() {
-            return getComputedStyle(document.documentElement).getPropertyValue('--color-5').trim();
         }
 
         // Function to draw the circle and lines on the canvas
@@ -170,10 +208,104 @@
             ctx.stroke();
             ctx.closePath();
         }
+		
+		// Function to get the current color from CSS
+        function getCurrentColor() {
+            const color = getComputedStyle(document.documentElement).getPropertyValue('--color-5').trim();
+            return color || '#FFFFFF'; // Fallback color
+        }
 
-        // Function to process WebSocket message
+        // Function to send data via WebSocket
+        function sendPosition(position) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = JSON.stringify({
+                    type: 'Rotor',
+                    value: position.toString(),
+                    source: ipAddress
+                });
+                ws.send(message);
+                console.log('Sent position:', message);
+            } else {
+                console.error('WebSocket is not open. Unable to send position.');
+            }
+        }
+
+        // Function to handle click on the canvas
+        function handleCanvasClick(event) {
+            if (!isTuneAuthenticated) {
+                alert("You must be authenticated to use the PSTRotator feature.");
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+
+            // Calculate angle in degrees
+            const deltaX = clickX - x;
+            const deltaY = clickY - y;
+            const angleRad = Math.atan2(deltaY, deltaX);
+            let angleDeg = (angleRad * 180 / Math.PI) + 90; // Adjust angle to match the 0-360 scale
+
+            // Normalize angle to be between 0 and 360
+            if (angleDeg < 0) {
+                angleDeg += 360;
+            }
+
+            // Ensure angle is within 0-359 range
+            angleDeg = angleDeg % 360;
+
+            // Round the angle and ensure 360 becomes 0
+            const roundedAngle = Math.round(angleDeg);
+            const finalAngle = roundedAngle === 360 ? 0 : roundedAngle;
+
+            // Send the calculated position
+            sendPosition(finalAngle);
+        }
+
+        // Function to handle mouse move over the canvas
+        function handleCanvasMouseMove(event) {
+            if (!isTuneAuthenticated) {
+                return; // Do nothing if not authenticated
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            // Calculate angle in degrees
+            const deltaX = mouseX - x;
+            const deltaY = mouseY - y;
+            const angleRad = Math.atan2(deltaY, deltaX);
+            let angleDeg = (angleRad * 180 / Math.PI) + 90; // Adjust angle to match the 0-360 scale
+
+            // Normalize angle to be between 0 and 360
+            if (angleDeg < 0) {
+                angleDeg += 360;
+            }
+
+            // Ensure angle is within 0-359 range
+            angleDeg = angleDeg % 360;
+
+            // Round the angle and ensure 360 becomes 0
+            const roundedAngle = Math.round(angleDeg);
+            const finalAngle = roundedAngle === 360 ? 0 : roundedAngle;
+
+            // Update tooltip
+            tooltip.textContent = finalAngle + '°';
+            tooltip.style.left = (event.clientX + 10) + 'px'; // Position the tooltip slightly to the right of the mouse
+            tooltip.style.top = (event.clientY + 10) + 'px';  // Position the tooltip slightly below the mouse
+            tooltip.style.display = 'block'; // Show the tooltip
+        }
+
+        // Function to handle mouse out of the canvas
+        function handleCanvasMouseOut() {
+            tooltip.style.display = 'none'; // Hide the tooltip when the mouse leaves the canvas
+        }
+
+        // Function to load WebSocket and set up event handlers
         function loadWebSocket() {
-            const ws = new WebSocket(WEBSOCKET_URL);
+            ws = new WebSocket(WEBSOCKET_URL);
 
             ws.onopen = async () => {
                 console.log('WebSocket connection to ' + WEBSOCKET_URL + ' established');
@@ -181,7 +313,7 @@
                 // Fetch IP address and send the initial request
                 ipAddress = await fetchIpAddress();
                 const requestPayload = JSON.stringify({
-                    type: 'rotor',
+                    type: 'Rotor',
                     value: 'request',
                     source: ipAddress
                 });
@@ -193,15 +325,14 @@
                 try {
                     const data = JSON.parse(event.data); // Parse the JSON data
 
-                    // Only process messages where type is "rotor"
-                    if (data.type === 'rotor') {
+                    // Only process messages where type is "Rotor"
+                    if (data.type === 'Rotor') {
                         // Skip messages from the own IP address
                         if (data.source === ipAddress) {
-                            //console.log('Ignoring message from own IP address:', data);
                             return;
                         }
 
-						console.log('Received:', data);
+                        console.log('Received:', data);
 
                         // Extract position from JSON data
                         const position = parseFloat(data.value);
@@ -235,11 +366,26 @@
             };
         }
 
-        // Main functionality
+        // Function to observe CSS variable changes
+        function observeColorChanges() {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'style') {
+                        drawCircleAndLines(); // Redraw the canvas if colors are updated
+                    }
+                });
+            });
+
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['style']
+            });
+        }
+
+        // Main function to initialize the plugin
         function main() {
             const $ = window.jQuery;
 
-            // Ensure jQuery is loaded
             if (!$) {
                 console.error('jQuery is not loaded.');
                 return;
@@ -247,17 +393,31 @@
 
             addHtmlElements(); // Add HTML elements
 
-            const canvas = $('#CanvasRotator')[0];
-            ctx = canvas.getContext('2d'); // Set ctx in the global scope
+            canvas = $('#CanvasRotator')[0]; // Get canvas element
+            ctx = canvas.getContext('2d'); // Set ctx in global scope
 
             x = canvas.width / 2;
             y = canvas.height / 2;
 
-            // Execute functions
-            loadWebSocket();
+            canvas.addEventListener('click', handleCanvasClick);
+            canvas.addEventListener('mousemove', handleCanvasMouseMove);
+            canvas.addEventListener('mouseout', handleCanvasMouseOut);
+
+            loadWebSocket(); // Load WebSocket
+            checkAdminMode(); // Check admin mode
+
+            observeColorChanges(); // Start observing CSS variable changes
+
+            // Initial drawing
+            drawCircleAndLines();
+
+            // Show the rotor after 300 ms
+            setTimeout(() => {
+                document.getElementById('containerRotator').classList.add('visible');
+            }, 300);
         }
 
-        // Load jQuery and execute the main script
+        // Load jQuery and execute the main function
         loadScript(JQUERY_URL, main);
 
     })();
