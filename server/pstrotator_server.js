@@ -1,20 +1,54 @@
-/////////////////////////////////////////////////////////////
-///                                                       ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V1.2) ///
-///                                                       ///
-///  by Highpoint                last update: 01.08.24    ///
-///                                                       ///
-///  https://github.com/Highpoint2000/PSTRotator          ///
-///                                                       ///
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+///                                                        ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V1.3) ///
+///                                                        ///
+///  by Highpoint                last update: 03.08.24     ///
+///                                                        ///
+///  https://github.com/Highpoint2000/PSTRotator           ///
+///                                                        ///
+//////////////////////////////////////////////////////////////
 
 /// only works from webserver version 1.2.6 !!!
 
-const port = 3000; // Port for the CORS Proxy and WebSocket server (default: 3000)
-const PSTRotatorUrl = 'http://127.0.0.1:80'; // Base URL (http://IP:Port) for the PST Rotator software (default: http://127.0.0.1:80)
-const externalWsUrl = 'ws://127.0.0.1:8080/extra'; // URL for the external WebSocket server, please adjust the port if necessary (default: ws://127.0.0.1:8080/extra)
+const PSTRotatorUrl = 'http://127.0.0.1:80'; // Base URL for the PST Rotator software
+const port = 3001; // Port for the internal CORS Proxy (default: 3000)
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+
+// Load port configuration from config.json
+const config = require('./../../config.json');
+const webserverPort = config.webserver.webserverPort || 8080; // Use the port from config.json or default to 8080
+const externalWsUrl = `ws://127.0.0.1:${webserverPort}/extra`;
+
+// Function to check and install missing NewModules
+const { execSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+const NewModules = [
+    'jsdom',
+];
+
+function checkAndInstallNewModules() {
+    NewModules.forEach(module => {
+        const modulePath = path.join(__dirname, './../../node_modules', module);
+        if (!fs.existsSync(modulePath)) {
+            console.log(`Module ${module} is missing. Installing...`);
+            try {
+                execSync(`npm install ${module}`, { stdio: 'inherit' });
+                console.log(`Module ${module} installed successfully.`);
+            } catch (error) {
+                console.error(`Error installing module ${module}:`, error);
+                process.exit(1); // Exit the process with an error code
+            }
+        } else {
+            // console.log(`Module ${module} is already installed.`);
+        }
+    });
+}
+
+// Check and install missing NewModules before starting the server
+checkAndInstallNewModules();
 
 // Import necessary modules
 const express = require('express'); // For creating the HTTP server
@@ -24,7 +58,7 @@ const WebSocket = require('ws'); // For WebSocket communication
 const app = express(); // Initialize Express application
 
 // Import custom logging functions
-const { logInfo, logError } = require('./console');
+const { logInfo, logError } = require('./../../server/console');
 
 // Middleware to handle CORS (Cross-Origin Resource Sharing) settings
 app.use((req, res, next) => {
@@ -58,14 +92,14 @@ let externalWs = null; // Define externalWs as a global variable
 
 // Start the HTTP server and listen on the specified port
 const server = app.listen(port, () => {
-    logInfo(`Proxy server is running on http://localhost:${port}`); // Use custom logInfo function
+    logInfo(`Rotor Proxy server is running on http://localhost:${port}`); // Use custom logInfo function
 
     // Start the server and delay WebSocket initialization
     setTimeout(() => {
         initializeWebSockets(); // Initialize WebSocket connections after a delay
         checkWebsiteAvailability().then(isAvailable => {
             if (isAvailable) {
-                setInterval(fetchAndProcessData, 1000); // Poll every 1000 milliseconds (1 second)
+                setInterval(fetchAndProcessData, 500); // Poll every 500 milliseconds (1 second)
             } else {
                 logError('Polling loop will not start because the PST Rotator web server is not reachable.');
             }
@@ -85,7 +119,7 @@ function initializeWebSockets() {
 
         // Handle incoming messages from WebSocket clients
         ws.on('message', message => {
-            logInfo(`Received message: ${message}`);
+            logInfo(`${message.type} received ${message.value}° from ${message.source}`);
 
             try {
                 const messageObject = JSON.parse(message);
@@ -95,20 +129,26 @@ function initializeWebSockets() {
                     messageObject.source = clientIp;
                 }
 
-                if (messageObject.type === 'rotor' && messageObject.value === 'request') {
+                if (messageObject.type === 'Rotor' && messageObject.value === 'request') {
                     logInfo('Received request for bearing value');
 
                     const responseMessage = JSON.stringify({
-                        type: 'rotor',
+                        type: 'Rotor',
                         value: lastBearingValue || 'No bearing data available',
                         source: clientIp
                     });
                     ws.send(responseMessage);
-                    logInfo(`Sent bearing value: ${responseMessage}`);
+                    logInfo(`Rotor respond lastBearingValue°`);
+                } else if (messageObject.type === 'Rotor' && messageObject.value !== 'request' && messageObject.source !== '127.0.0.1') {
+                    logInfo('Received update for bearing value');
+
+                    // Call function to update PST Rotator
+                    updatePstRotator(messageObject.value);
                 } else {
-                    logInfo('Message type or value did not match "rotor" and "request"');
+                    logInfo('Message type or value did not match expected criteria');
                 }
 
+                // Broadcast the message to all connected clients except the sender
                 wss.clients.forEach(client => {
                     if (client !== ws && client.readyState === WebSocket.OPEN) {
                         client.send(JSON.stringify(messageObject));
@@ -133,23 +173,26 @@ function initializeWebSockets() {
     externalWs = new WebSocket(externalWsUrl);
 
     externalWs.on('open', () => {
-        logInfo(`Connected to external WebSocket server at ${externalWsUrl}`);
+        logInfo(`Rotor connected to external WebSocket server at ${externalWsUrl}`);
     });
 
     externalWs.on('message', message => {
         try {
             const messageObject = JSON.parse(message);
 
-            if (messageObject.type === 'rotor' && messageObject.value === 'request' && messageObject.source !== '127.0.0.1') {
-                logInfo(`Received: ${message}`);
+            if (messageObject.type === 'Rotor' && messageObject.value === 'request' && messageObject.source !== '127.0.0.1') {
+                logInfo(`Rotor request from ${messageObject.source}`);
 
                 const responseMessage = JSON.stringify({
-                    type: 'rotor',
+                    type: 'Rotor',
                     value: lastBearingValue || 'No bearing data available',
                     source: clientIp
                 });
                 externalWs.send(responseMessage);
-                logInfo(`Sent: ${responseMessage}`);
+                logInfo(`Rotor respond ${lastBearingValue}°`);
+            } else if (messageObject.type === 'Rotor' && messageObject.value !== 'request' && messageObject.source !== '127.0.0.1') {
+                logInfo(`Rotor request ${messageObject.value}° from ${messageObject.source}`);
+                updatePstRotator(messageObject.value); // Update PST Rotator with the received value
             }
         } catch (error) {
             logError('Error processing message from external WebSocket server: ' + error);
@@ -168,7 +211,7 @@ async function checkWebsiteAvailability() {
     try {
         const response = await fetch(proxyUrl);
         if (response.ok) {
-            logInfo(`PST Rotator web server ${PSTRotatorUrl} is reachable through the proxy.`);
+            logInfo(`PST Rotator web server ${PSTRotatorUrl} is reachable through the proxy`);
             return true;
         } else {
             logError(`PST Rotator web server ${PSTRotatorUrl} is not reachable. Status: ${response.status}`);
@@ -207,11 +250,11 @@ async function fetchAndProcessData() {
         }
 
         if (bearingValue !== lastBearingValue) {
-            const message = JSON.stringify({ type: 'rotor', value: bearingValue, source: clientIp });
+            const message = JSON.stringify({ type: 'Rotor', value: bearingValue, source: clientIp });
 
             if (externalWs && externalWs.readyState === WebSocket.OPEN) {
                 externalWs.send(message);
-                logInfo(`Sent: ${message}`);
+                logInfo(`Rotor broadcast ${bearingValue}°`);
                 lastBearingValue = bearingValue;
             } else {
                 logError('External WebSocket connection is not open');
@@ -220,5 +263,29 @@ async function fetchAndProcessData() {
 
     } catch (error) {
         logError('Error fetching or parsing the page: ' + error);
+    }
+}
+
+// Function to update the PST Rotator page with the new bearing value
+async function updatePstRotator(value) {
+    const formActionUrl = `${PSTRotatorUrl}/PstRotatorAz.htm`; // The form action URL
+    
+    // Construct URL with query parameters
+    const url = new URL(formActionUrl);
+    url.searchParams.append('az', value);
+
+    try {
+        // Fetch the page content (optional, only if needed for debugging)
+        const response = await fetch(url.toString(), {
+            method: 'GET'
+        });
+
+        if (response.ok) {
+            logInfo(`Rotor turns up to ${value}°`);
+        } else {
+            logError(`Rotor: Form submission failed. Status: ${response.status}`);
+        }
+    } catch (error) {
+        logError('Error updating PST Rotator: ' + error);
     }
 }
