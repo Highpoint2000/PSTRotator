@@ -1,3 +1,6 @@
+// index.js - Mod by Highpoint
+// Version for loading server-side plugins
+
 // Library imports
 const express = require('express');
 const endpoints = require('./endpoints');
@@ -13,6 +16,7 @@ const wss = new WebSocket.Server({ noServer: true });
 const chatWss = new WebSocket.Server({ noServer: true });
 const rdsWss = new WebSocket.Server({ noServer: true });
 const ExtraWss = new WebSocket.Server({ noServer: true });
+const fs = require('fs');
 const path = require('path');
 const net = require('net');
 const client = new net.Socket();
@@ -27,7 +31,24 @@ const { logDebug, logError, logInfo, logWarn, logChat } = require('./console');
 const storage = require('./storage');
 const { serverConfig, configExists } = require('./server_config');
 const pjson = require('../package.json');
-require('./pstrotator_server');
+
+// Dynamically require *_server.js files for server-side plugins
+function findServerFiles(dir) {
+  let results = [];
+  fs.readdirSync(dir).forEach(file => {
+    const fullPath = path.join(dir, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      results = results.concat(findServerFiles(fullPath));
+    } else if (file.endsWith('_server.js')) {
+      results.push(fullPath);
+    }
+  });
+  return results;
+}
+
+const pluginsDir = path.join(__dirname, '..', 'plugins');
+findServerFiles(pluginsDir).forEach(require);
+
 
 console.log(`\x1b[32m
  _____ __  __       ______  __ __        __   _                                  
@@ -450,13 +471,14 @@ rdsWss.on('connection', (ws, request) => {
 });
 
 
+//additional web socket for using plugins
 ExtraWss.on('connection', (ws, request)  => { 
     ws.on('message', message => {
 
         const messageData = JSON.parse(message);
         const modifiedMessage = JSON.stringify(messageData);
 
-        // Broadcast the message to all other clients
+        //Broadcast the message to all other clients
         ExtraWss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(modifiedMessage); // Send the message to all clients
@@ -465,13 +487,14 @@ ExtraWss.on('connection', (ws, request)  => {
     });
 
     ws.on('close', () => {
-        //logInfo('WebSocket Extra connection closed'); // Use custom logInfo function
+        // logInfo('WebSocket Extra connection closed'); // Use custom logInfo function
     });
 
     ws.on('error', error => {
         logError('WebSocket Extra error: ' + error); // Use custom logError function
     });
 });
+
 
 // Websocket register for /text, /audio and /chat paths 
 httpServer.on('upgrade', (request, socket, head) => {
@@ -496,10 +519,10 @@ httpServer.on('upgrade', (request, socket, head) => {
       });
     });
    } else if (request.url === '/extra') {
-	 //sessionMiddleware(request, {}, () => {
+	 sessionMiddleware(request, {}, () => {
        ExtraWss.handleUpgrade(request, socket, head, (ws) => {
 		  ExtraWss.emit('connection', ws, request);
-     // });
+      });
 	});
   } else {
 	socket.destroy();
