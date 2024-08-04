@@ -11,7 +11,7 @@
 /// only works from webserver version 1.2.6 !!!
 
 const PSTRotatorUrl = 'http://127.0.0.1:80'; // Base URL for the PST Rotator software
-const port = 3001; // Port for the internal CORS Proxy (default: 3000)
+const port = 3000; // Port for the internal CORS Proxy (default: 3000)
 
 //////////////////////////////////////////////////////////////
 
