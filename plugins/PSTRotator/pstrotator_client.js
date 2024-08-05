@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////
 ///                                                        ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.3)  ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.4)  ///
 ///                                                        ///
-///  by Highpoint                last update: 04.08.24     ///
+///  by Highpoint                last update: 05.08.24     ///
 ///                                                        ///
 ///  https://github.com/Highpoint2000/PSTRotator           ///
 ///                                                        ///
@@ -11,7 +11,7 @@
 /// only works from webserver version 1.2.6 !!!
 
 (() => {
-    const plugin_version = '1.3'; // Plugin Version
+    const plugin_version = '1.4'; // Plugin Version
 
     // Global variable to store the IP address
     let ipAddress;
