@@ -88,12 +88,12 @@
             #backgroundRotator {
                 position: absolute;      
                 width: 220px;
-                height: 265px;
+                height: 225px;
             }
             #backgroundRotator img {
                 height: 90%;
-                margin-top: -60px;
-                margin-left: 0px;
+                margin-top: -22px;
+                margin-left: -2px;
                 object-fit: cover;
             }
             #CanvasRotator {
