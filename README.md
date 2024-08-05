@@ -2,7 +2,8 @@
 
 This plugin provides a graphical azimuth display (rotor view) with interactive control for the FM-DX web server.
 
-![image](https://github.com/user-attachments/assets/53cf0f0a-bceb-48cd-957f-34bf824be87d)
+![image](https://github.com/user-attachments/assets/f86ceafc-af73-4156-acce-61f1cc26e599)
+
 
 ## Version 1.4 (only works from webserver version 1.2.6 !!!)
 
