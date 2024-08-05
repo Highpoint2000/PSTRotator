@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////
 ///                                                        ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V1.3) ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V1.4)  ///
 ///                                                        ///
-///  by Highpoint                last update: 03.08.24     ///
+///  by Highpoint                last update: 05.08.24     ///
 ///                                                        ///
 ///  https://github.com/Highpoint2000/PSTRotator           ///
 ///                                                        ///
@@ -10,8 +10,8 @@
 
 /// only works from webserver version 1.2.6 !!!
 
-const PSTRotatorUrl = 'http://127.0.0.1:80'; // Base URL for the PST Rotator software
-const port = 3000; // Port for the internal CORS Proxy (default: 3000)
+const PSTRotatorTcpHost = '127.0.0.1'; // TCP Host for the PST Rotator software
+const PSTRotatorTcpPort = 4001; // TCP Port for the PST Rotator software
 
 //////////////////////////////////////////////////////////////
 
@@ -24,93 +24,29 @@ const externalWsUrl = `ws://127.0.0.1:${webserverPort}/extra`;
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-
-const NewModules = [
-    'jsdom',
-];
-
-function checkAndInstallNewModules() {
-    NewModules.forEach(module => {
-        const modulePath = path.join(__dirname, './../../node_modules', module);
-        if (!fs.existsSync(modulePath)) {
-            console.log(`Module ${module} is missing. Installing...`);
-            try {
-                execSync(`npm install ${module}`, { stdio: 'inherit' });
-                console.log(`Module ${module} installed successfully.`);
-            } catch (error) {
-                console.error(`Error installing module ${module}:`, error);
-                process.exit(1); // Exit the process with an error code
-            }
-        } else {
-            // console.log(`Module ${module} is already installed.`);
-        }
-    });
-}
-
-// Check and install missing NewModules before starting the server
-checkAndInstallNewModules();
+const net = require('net'); // Import TCP module
 
 // Import necessary modules
-const express = require('express'); // For creating the HTTP server
-const fetch = require('node-fetch'); // For making HTTP requests
-const { JSDOM } = require('jsdom'); // For parsing and manipulating HTML
 const WebSocket = require('ws'); // For WebSocket communication
-const app = express(); // Initialize Express application
 
 // Import custom logging functions
 const { logInfo, logError } = require('./../../server/console');
-
-// Middleware to handle CORS (Cross-Origin Resource Sharing) settings
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
-    res.setHeader('Access-Control-Allow-Methods', 'GET'); // Allow only GET requests
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); // Allow Content-Type header
-    next(); // Proceed to the next middleware or route handler
-});
-
-// Route to act as a proxy for fetching data from other URLs
-app.get('/proxy', async (req, res) => {
-    const targetUrl = req.query.url; // Get the target URL from query parameters
-    if (!targetUrl) {
-        return res.status(400).send('URL parameter missing'); // Respond with an error if URL is missing
-    }
-
-    try {
-        const response = await fetch(targetUrl); // Fetch the data from the target URL
-        const body = await response.text(); // Get the response body as text
-        res.send(body); // Send the body as the response
-    } catch (error) {
-        logError('Error fetching the URL: ' + error); // Use custom logError function
-        res.status(500).send('Error fetching the URL'); // Respond with an error if fetching fails
-    }
-});
 
 // Initialize global variables
 const clientIp = '127.0.0.1'; // Define the client IP address
 let lastBearingValue = null; // Variable to store the last bearing value
 let externalWs = null; // Define externalWs as a global variable
 
-// Start the HTTP server and listen on the specified port
-const server = app.listen(port, () => {
-    logInfo(`Rotor Proxy server is running on http://localhost:${port}`); // Use custom logInfo function
-
     // Start the server and delay WebSocket initialization
     setTimeout(() => {
         initializeWebSockets(); // Initialize WebSocket connections after a delay
-        checkWebsiteAvailability().then(isAvailable => {
-            if (isAvailable) {
-                setInterval(fetchAndProcessData, 500); // Poll every 500 milliseconds (1 second)
-            } else {
-                logError('Polling loop will not start because the PST Rotator web server is not reachable.');
-            }
-        });
+        setInterval(fetchAndProcessData, 500); // Poll every 500 milliseconds (1 second)
     }, 1000); // Delay of 1000 milliseconds (1 second)
-});
 
 // Function to initialize WebSocket connections
 function initializeWebSockets() {
     // Create a WebSocket server that uses the existing HTTP server
-    const wss = new WebSocket.Server({ server });
+    const wss = new WebSocket(externalWsUrl);
     wss.binaryType = 'text'; // Setzt den Typ der empfangenen Daten auf Text
 
     // Handle WebSocket connections
@@ -204,50 +140,24 @@ function initializeWebSockets() {
     });
 }
 
-// Function to check if the PST Rotator web server is available
-async function checkWebsiteAvailability() {
-    const proxyUrl = `http://127.0.0.1:${port}/proxy?url=${PSTRotatorUrl}/PstRotatorAz.htm`;
+// Function to fetch and process data from the PST Rotator TCP server
+function fetchAndProcessData() {
+    const client = new net.Socket();
 
-    try {
-        const response = await fetch(proxyUrl);
-        if (response.ok) {
-            logInfo(`PST Rotator web server ${PSTRotatorUrl} is reachable through the proxy`);
-            return true;
-        } else {
-            logError(`PST Rotator web server ${PSTRotatorUrl} is not reachable. Status: ${response.status}`);
-            return false;
-        }
-    } catch (error) {
-        logError('Error checking PST Rotator web server availability: ' + error);
-        return false;
-    }
-}
+    client.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
+        // logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort}`);
+    });
 
-// Function to fetch and process data from the PST Rotator web server
-async function fetchAndProcessData() {
-    const proxyUrl = `http://127.0.0.1:${port}/proxy?url=${PSTRotatorUrl}/PstRotatorAz.htm`;
-
-    try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const text = await response.text();
-
-        const { document } = (new JSDOM(text)).window;
-        const bearingElement = Array.from(document.querySelectorAll('*')).find(el => el.textContent.includes('Bearing'));
-
+    client.on('data', data => {
+        const dataString = data.toString();
+        const azValueMatch = dataString.match(/AZ=([\d.]+)/);
         let bearingValue = 'Bearing value not found.';
 
-        if (bearingElement) {
-            const bearingText = bearingElement.textContent;
-            const bearingRegex = /Bearing\s*[:=]\s*([^\s<]+)/;
-            const match = bearingText.match(bearingRegex);
-
-            if (match) {
-                bearingValue = match[1];
-            }
-        }
+        if (azValueMatch) {
+            // Round the bearing value to the nearest whole number
+            const currentBearing = parseFloat(azValueMatch[1]);
+            bearingValue = Math.round(currentBearing).toString();
+        }	
 
         if (bearingValue !== lastBearingValue) {
             const message = JSON.stringify({ type: 'Rotor', value: bearingValue, source: clientIp });
@@ -261,31 +171,28 @@ async function fetchAndProcessData() {
             }
         }
 
-    } catch (error) {
-        logError('Error fetching or parsing the page: ' + error);
-    }
+        client.destroy(); // Close the connection after receiving the data
+    });
+
+    client.on('error', error => {
+        logError('Error with TCP connection: ' + error);
+    });
 }
 
 // Function to update the PST Rotator page with the new bearing value
 async function updatePstRotator(value) {
-    const formActionUrl = `${PSTRotatorUrl}/PstRotatorAz.htm`; // The form action URL
-    
-    // Construct URL with query parameters
-    const url = new URL(formActionUrl);
-    url.searchParams.append('az', value);
+    // Send value with 'M' prefix over TCP
+    const tcpClient = new net.Socket();
+    const messageToSend = `M${value}\r\n`;
 
-    try {
-        // Fetch the page content (optional, only if needed for debugging)
-        const response = await fetch(url.toString(), {
-            method: 'GET'
-        });
+    tcpClient.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
+        logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort} for updating bearing`);
+        tcpClient.write(messageToSend);
+        logInfo(`Sent update to TCP server: ${messageToSend}`);
+        tcpClient.end(); // Close the connection after sending the data
+    });
 
-        if (response.ok) {
-            logInfo(`Rotor turns up to ${value}°`);
-        } else {
-            logError(`Rotor: Form submission failed. Status: ${response.status}`);
-        }
-    } catch (error) {
-        logError('Error updating PST Rotator: ' + error);
-    }
+    tcpClient.on('error', error => {
+        logError('Error with TCP connection: ' + error);
+    });
 }
