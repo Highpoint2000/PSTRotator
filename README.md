@@ -4,12 +4,11 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/53cf0f0a-bceb-48cd-957f-34bf824be87d)
 
+## Version 1.4 (only works from webserver version 1.2.6 !!!)
 
-## Version 1.3 (only works from webserver version 1.2.6 !!!)
+- using the TCP protocol for PSTRotator communication
+- new layout
 
-- simplified installation
-- checking and automatic installation of required node.js modules
-- interactive control by clicking on the desired number of degrees (only for admins!)
 
 ## Installation notes:
 
@@ -30,6 +29,12 @@ This will move the weather plugin a little to the left and no longer overlay the
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History: 
+
+## Version 1.3 (only works from webserver version 1.2.6 !!!)
+
+- simplified installation
+- checking and automatic installation of required node.js modules
+- interactive control by clicking on the desired number of degrees (only for admins!)
 
 ## Version 1.2 (only works from webserver version 1.2.6 !!!)
 
