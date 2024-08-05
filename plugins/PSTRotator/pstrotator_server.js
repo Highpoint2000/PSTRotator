@@ -143,35 +143,34 @@ function initializeWebSockets() {
 // Function to fetch and process data from the PST Rotator TCP server
 function fetchAndProcessData() {
     const client = new net.Socket();
+    let buffer = '';
 
-    client.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
-        // logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort}`);
-    });
+    client.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {});
 
     client.on('data', data => {
-        const dataString = data.toString();
-        const azValueMatch = dataString.match(/AZ=([\d.]+)/);
+        buffer += data.toString();
+        const azValueMatch = buffer.match(/AZ=(\d{3})/);
         let bearingValue = 'Bearing value not found.';
 
         if (azValueMatch) {
-            // Round the bearing value to the nearest whole number
-            const currentBearing = parseFloat(azValueMatch[1]);
+            const currentBearing = parseInt(azValueMatch[1], 10);
             bearingValue = Math.round(currentBearing).toString();
-        }	
 
-        if (bearingValue !== lastBearingValue) {
-            const message = JSON.stringify({ type: 'Rotor', value: bearingValue, source: clientIp });
+            if (bearingValue !== lastBearingValue) {
+                const message = JSON.stringify({ type: 'Rotor', value: bearingValue, source: clientIp });
 
-            if (externalWs && externalWs.readyState === WebSocket.OPEN) {
-                externalWs.send(message);
-                logInfo(`Rotor broadcast ${bearingValue}°`);
-                lastBearingValue = bearingValue;
-            } else {
-                logError('External WebSocket connection is not open');
+                if (externalWs && externalWs.readyState === WebSocket.OPEN) {
+                    externalWs.send(message);
+                    logInfo(`Rotor broadcast ${bearingValue}°`);
+                    lastBearingValue = bearingValue;
+                } else {
+                    logError('External WebSocket connection is not open');
+                }
             }
-        }
 
-        client.destroy(); // Close the connection after receiving the data
+            buffer = buffer.substring(buffer.indexOf('AZ=') + azValueMatch[0].length);
+            client.destroy();
+        }
     });
 
     client.on('error', error => {
@@ -181,9 +180,9 @@ function fetchAndProcessData() {
 
 // Function to update the PST Rotator page with the new bearing value
 async function updatePstRotator(value) {
-    // Send value with 'M' prefix over TCP
     const tcpClient = new net.Socket();
-    const messageToSend = `M${value}\r\n`;
+    const formattedValue = value.toString().padStart(3, '0');
+    const messageToSend = `M${formattedValue}\r\n`;
 
     tcpClient.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
         logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort} for updating bearing`);
