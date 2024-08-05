@@ -144,6 +144,7 @@ function initializeWebSockets() {
 function fetchAndProcessData() {
     const client = new net.Socket();
 
+
     client.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
         // logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort}`);
     });
@@ -168,10 +169,13 @@ function fetchAndProcessData() {
                 lastBearingValue = bearingValue;
             } else {
                 logError('External WebSocket connection is not open');
+
             }
         }
 
         client.destroy(); // Close the connection after receiving the data
+
+
     });
 
     client.on('error', error => {
@@ -184,6 +188,7 @@ async function updatePstRotator(value) {
     // Send value with 'M' prefix over TCP
     const tcpClient = new net.Socket();
     const messageToSend = `M${value}\r\n`;
+
 
     tcpClient.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
         logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort} for updating bearing`);
