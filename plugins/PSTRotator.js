@@ -1,7 +1,7 @@
 // Plugin configuration, this is used in the administration when plugins are loaded
 var pluginConfig = {
     name: 'AZ-Rotor',
-    version: '1.4',
+    version: '2.0',
     author: 'Highpoint',
     frontEndPath: 'PSTRotator/pstrotator_client.js'
 }
