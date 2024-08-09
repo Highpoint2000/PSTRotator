@@ -16,7 +16,6 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 - The rotor limit is shown by a gray line
 - Manual degree entry 
 - Authenticated Tune users can control the rotor
-- 
 
 ## Installation notes:
 
