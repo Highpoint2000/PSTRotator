@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V1.5)       ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.0)       ///
 ///                                                             ///
 ///  by Highpoint                        last update: 09.08.24  ///
 ///                                                             ///
@@ -9,16 +9,16 @@
 ///////////////////////////////////////////////////////////////////
 
 // Additional rotor limits line variables
-const RotorLimitLineLength = 67; // set the length of the line (default: 67, none: 0)
-const RotorLimitLineAngle = 129; // set the angle of the line (e.g. 180)
-const RotorLimitLineColor = '#808080'; // set the color for the additional line (default: #808080)
+const RotorLimitLineLength = 67; // Set the length of the line (default: 67, none: 0)
+const RotorLimitLineAngle = 129; // Set the angle of the line (e.g., 180)
+const RotorLimitLineColor = '#808080'; // Set the color for the additional line (default: #808080)
 
 ////////////////////////////////////////////////////////////////////
 
 
 // Only works from webserver version 1.2.6 !!!
 (() => {
-    const plugin_version = '1.5'; // Plugin Version
+    const plugin_version = '2.0'; // Plugin Version
 
     // Global variable to store the IP address
     let ipAddress;
