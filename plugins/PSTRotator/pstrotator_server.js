@@ -189,12 +189,19 @@ async function updatePstRotator(value) {
     const tcpClient = new net.Socket();
     const messageToSend = `M${value}\r\n`;
 
-
     tcpClient.connect(PSTRotatorTcpPort, PSTRotatorTcpHost, () => {
         logInfo(`Connected to TCP server at ${PSTRotatorTcpHost}:${PSTRotatorTcpPort} for updating bearing`);
-        tcpClient.write(messageToSend);
-        logInfo(`Sent update to TCP server: ${messageToSend}`);
-        tcpClient.end(); // Close the connection after sending the data
+
+        // Function to send a single message and close the connection
+        const sendMessage = () => {
+            tcpClient.write(messageToSend, () => {
+                logInfo(`Sent update to TCP server: ${messageToSend}`);
+                tcpClient.end(); // Close the connection after sending the data
+            });
+        };
+
+        // Send the message with a delay of 10 ms
+        setTimeout(sendMessage, 10);
     });
 
     tcpClient.on('error', error => {
