@@ -29,17 +29,18 @@ const RotorLimitLineColor = '#808080'; // Set the color for the additional line 
     // Extract WebserverURL and WebserverPORT from the current page URL
     const currentURL = new URL(window.location.href);
     const WebserverURL = currentURL.hostname;
+    const WebserverPath = currentURL.pathname;
     let WebserverPORT = currentURL.port || (currentURL.protocol === 'https:' ? '443' : '80'); // Default ports if not specified
 
     // Determine WebSocket protocol and port
     const protocol = currentURL.protocol === 'https:' ? 'wss:' : 'ws:'; // Determine WebSocket protocol
     const WebsocketPORT = WebserverPORT; // Use the same port as HTTP/HTTPS
-    const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}/extra`; // WebSocket URL with /extra
+    const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}${WebserverPath}extra`; // WebSocket URL with /extra
 
     // Configuration variables
     const JQUERY_VERSION = '3.6.0'; // Version of jQuery to use
     const JQUERY_URL = `https://code.jquery.com/jquery-${JQUERY_VERSION}.min.js`; // URL for jQuery
-    const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}/js/plugins/PSTRotator/Rotor.png`; // URL for background image
+    const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}${WebserverPath}js/plugins/PSTRotator/Rotor.png`; // URL for background image
 
     let ctx; // Canvas context
     let x, y; // Center coordinates of the canvas
