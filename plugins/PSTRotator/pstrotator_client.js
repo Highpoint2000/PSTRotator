@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.0)       ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.0a BETA) ///
 ///                                                             ///
-///  by Highpoint                        last update: 09.08.24  ///
+///  by Highpoint                        last update: 16.08.24  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -18,7 +18,7 @@ const RotorLimitLineColor = '#808080'; // Set the color for the additional line 
 
 // Only works from webserver version 1.2.6 !!!
 (() => {
-    const plugin_version = '2.0'; // Plugin Version
+    const plugin_version = '2.0a BETA'; // Plugin Version
 
     // Global variable to store the IP address
     let ipAddress;
