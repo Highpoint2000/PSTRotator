@@ -4,18 +4,9 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/7926b922-e5ab-4ddb-9525-4cdf8fda4810)
 
+## Version 2.0a BETA (only works from webserver version 1.2.6 !!!)
 
-
-
-
-## Version 2.0 (only works from webserver version 1.2.6 !!!)
-
-- Using the webserver for PSTRotator communication (There were crashes when using TCP!)
-- Rotor is now on the left side (Weather plugin no longer needs to be moved!)
-- Rotor display and control on mobile devices
-- The rotor limit is shown by a gray line
-- Manual degree entry 
-- Authenticated Tune users can control the rotor
+- bugfixing
 
 ## Installation notes:
 
@@ -34,7 +25,16 @@ A gray line can be defined in the header of the client script, which marks the r
 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
-## History: 
+## History:
+
+### Version 2.0 (only works from webserver version 1.2.6 !!!)
+
+- Using the webserver for PSTRotator communication (There were crashes when using TCP!)
+- Rotor is now on the left side (Weather plugin no longer needs to be moved!)
+- Rotor display and control on mobile devices
+- The rotor limit is shown by a gray line
+- Manual degree entry 
+- Authenticated Tune users can control the rotor 
 
 ### Version 1.4 (only works from webserver version 1.2.6 !!!)
 
