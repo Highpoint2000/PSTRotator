@@ -2,7 +2,7 @@
 ///                                                             ///
 ///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.0a) BETA ///
 ///                                                             ///
-///  by Highpoint                         last update: 09.08.24 ///
+///  by Highpoint                         last update: 25.08.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
