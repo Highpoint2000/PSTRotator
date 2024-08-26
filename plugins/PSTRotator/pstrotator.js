@@ -1,31 +1,35 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.0a BETA) ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.1  BETA) ///
 ///                                                             ///
-///  by Highpoint                        last update: 25.08.24  ///
+///  by Highpoint                        last update: 26.08.24  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
+// Only works from webserver version 1.2.6 !!!
+
 // Additional rotor limits line variables
-const RotorLimitLineLength = 0; // Set the length of the line (default: 67, none: 0)
+const RotorLimitLineLength = 67; // Set the length of the line (default: 67, none: 0)
 const RotorLimitLineAngle = 129; // Set the angle of the line (e.g., 180)
 const RotorLimitLineColor = '#808080'; // Set the color for the additional line (default: #808080)
 
 ////////////////////////////////////////////////////////////////////
 
-// Only works from webserver version 1.2.6 !!!
 document.addEventListener('DOMContentLoaded', () => {
     // Delay the execution by 500 milliseconds
     setTimeout(() => {
-        const plugin_version = '2.0a BETA'; // Plugin Version
+        const plugin_version = '2.1 BETA'; // Plugin Version
 
         // Global variable to store the IP address
         let ipAddress;
 
         // Flag to indicate whether authentication is successful
-        let isTuneAuthenticated = false;
+        let isTuneAuthenticated;
+		let isAdminLoggedIn;
+		let isTuneLoggedIn;
+		let isLockAuthenticated; 
 
         // Extract WebserverURL and WebserverPORT from the current page URL
         const currentURL = new URL(window.location.href);
@@ -67,8 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Function to check if the user is logged in as an administrator
         function checkAdminMode() {
             const bodyText = document.body.textContent || document.body.innerText;
-            const isAdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as adminstrator.");
-            const isTuneLoggedIn = bodyText.includes("You are logged in and can control the receiver.");
+            isAdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as an adminstrator.");
+            isTuneLoggedIn = bodyText.includes("You are logged in and can control the receiver.");
 
             if (isAdminLoggedIn) {
                 console.log(`Admin mode found. PSTRotator Plugin Authentication successful.`);
@@ -76,9 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (isTuneLoggedIn) {
                 console.log(`Tune mode found. PSTRotator Plugin Authentication successful.`);
                 isTuneAuthenticated = true;
-            } else {
-                console.log("No authentication. Authentication failed.");
-                isTuneAuthenticated = false;
             }
         }
 
@@ -204,6 +205,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         left: 0px;
                     }
                 }
+                #lockButton {
+                    position: relative;
+                    top: -20px;
+                    right: -160px;
+                    width: 20px;
+                    height: 30px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                }
+				/* Media Query for screens narrower than 768px */
+                @media (max-width: 768px) {
+                    #lockButton {
+                        top: 40px;
+                        left: 220px;
+                    }
+                }
+                #lockButton.locked::before {
+					filter: hue-rotate(320deg);
+                    content: '🔒';
+                    font-size: 20px;
+					color: #ffffff; /* Weiße Farbe für das Symbol */
+                }				
+                #lockButton.unlocked::before {
+					filter: hue-rotate(320deg);
+                    content: '🔓';
+                    font-size: 20px;
+					color: #ffffff; /* Weiße Farbe für das Symbol */
+                }
             `;
             document.head.appendChild(style);
 
@@ -212,18 +243,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Find the existing canvas container and the signal-canvas element
                 const canvasContainer = document.querySelector('.canvas-container.hide-phone');
                 const signalCanvas = document.getElementById('signal-canvas');
-                
+
                 if (canvasContainer && signalCanvas) {
                     console.log('Found canvas-container and #signal-canvas element.');
 
                     // Remove hide-phone from canvas-container
                     canvasContainer.classList.remove('hide-phone');
-                    
+
                     // Create a new div for the signal-canvas with the hide-phone class
                     const hideCanvasContainer = document.querySelector(".canvas-container");
                     hideCanvasContainer.className = 'canvas-container hide-phone';
                     hideCanvasContainer.appendChild(signalCanvas);
-                    
+
                     // Insert the new hide-canvas-container before the existing containerRotator if it exists
                     if (document.getElementById('containerRotator')) {
                         canvasContainer.insertAdjacentElement('beforebegin', hideCanvasContainer);
@@ -231,28 +262,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         // If containerRotator does not exist, just replace the existing canvasContainer
                         canvasContainer.parentNode.replaceChild(hideCanvasContainer, canvasContainer);
                     }
-                    
+
                     console.log('HTML elements added and updated successfully.');
 
                     // Check if the containerRotator already exists
                     if (!document.getElementById('containerRotator')) {
                         const containerRotator = document.createElement('div');
                         containerRotator.id = 'containerRotator';
-                        containerRotator.innerHTML = `
-                            <div id="backgroundRotator">
-                                <img src="${IMAGE_URL}" alt="Background Image">
-                            </div>
-                            <canvas id="CanvasRotator" width="200" height="200"></canvas>
-                            <div id="innerCircle" title="Plugin Version: ${plugin_version}"></div>
+							containerRotator.innerHTML = `
+								<div id="backgroundRotator">
+									<img src="${IMAGE_URL}" alt="Background Image">
+								</div>
+								<canvas id="CanvasRotator" width="200" height="200"></canvas>
+								<div id="innerCircle" title="Plugin Version: ${plugin_version}">
+									<div id="lockIcon" class="lock-closed"></div>
+								</div>
+								<div id="lockButton" class="locked"></div>
                         `;
+						
 
                         // Insert the new containerRotator after the newly created hide-canvas-container element
                         hideCanvasContainer.insertAdjacentElement('afterend', containerRotator);
                         console.log('containerRotator added successfully.');
                         // Set parent container styles to allow side by side placement
                         containerRotator.style.display = 'flex';
-                        containerRotator.style.alignItems = 'flex-start'; 
-                        
+                        containerRotator.style.alignItems = 'flex-start';
                     }
 
                     // Create and append the tooltip element
@@ -339,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const message = JSON.stringify({
                         type: 'Rotor',
                         value: position.toString(),
+						lock: isLockAuthenticated,
                         source: ipAddress
                     });
                     ws.send(message);
@@ -347,10 +382,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error('WebSocket is not open. Unable to send position.');
                 }
             }
+			
+			// Function to send data via WebSocket
+            function sendLockStatus() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    const message = JSON.stringify({
+                        type: 'Rotor',
+						lock: isLockAuthenticated,
+                        source: ipAddress
+                    });
+                    ws.send(message);
+                    console.log('Sent lock status:', message);
+                } else {
+                    console.error('WebSocket is not open. Unable to send position.');
+                }
+            }
 
             // Function to handle click on the canvas
             function handleCanvasClick(event) {
-                if (!isTuneAuthenticated) {
+                if (!isTuneAuthenticated && isLockAuthenticated) {
                     alert("You must be authenticated to use the PSTRotator feature.");
                     return;
                 }
@@ -383,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Function to handle click on the inner circle
             function handleInnerCircleClick() {
-                if (!isTuneAuthenticated) {
+                if (!isTuneAuthenticated && isLockAuthenticated) {
                     alert("You must be authenticated to use the PSTRotator feature.");
                     return;
                 }
@@ -405,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Function to handle mouse move over the canvas
             function handleCanvasMouseMove(event) {
-                if (!isTuneAuthenticated) {
+                if (!isTuneAuthenticated && isLockAuthenticated) {
                     return; // Do nothing if not authenticated
                 }
 
@@ -461,41 +511,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('Sent:', requestPayload);
                 };
 
-                ws.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data); // Parse the JSON data
+ws.onmessage = (event) => {
+    try {
+        const data = JSON.parse(event.data); // Parse the JSON data
 
-                        // Only process messages where type is "Rotor"
-                        if (data.type === 'Rotor') {
-                            // Skip messages from the own IP address
-                            if (data.source === ipAddress) {
-                                return;
-                            }
+        // Only process messages where type is "Rotor"
+        if (data.type === 'Rotor') {
+            // Skip messages from the own IP address
+            if (data.source === ipAddress) {
+                return;
+            }
 
-                            console.log('Received:', data);
+            console.log('Received:', data);
 
-                            // Extract position from JSON data
-                            const position = parseFloat(data.value);
+            // Extract position and lock from JSON data
+            const position = parseFloat(data.value);
+            const lock = data.lock;
 
-                            // Check if position is a valid number
-                            if (isNaN(position)) {
-                                console.error('Received position is not a valid number:', data.value);
-                                return; // Abort processing
-                            }
+            // Check if lock status is received and differs from current status
+            if (lock !== undefined && lock !== isLockAuthenticated) {
+                isLockAuthenticated = lock; // Update isLockAuthenticated
+                updateLockButtonState(); // Update the lock button UI based on the new state
+                console.log(`Lock state updated to: ${isLockAuthenticated}`);
+            }
 
-                            // Check if position is within valid range
-                            if (position >= 0 && position <= 360) {
-                                lineAngle = position - 90;
-                                drawCircleAndLines();
-                            } else {
-                                console.warn('Received position is out of range:', position);
-                            }
-                        }
-                        // All other messages are ignored
-                    } catch (error) {
-                        console.error('Error processing WebSocket message:', error);
-                    }
-                };
+            // Check if position is a valid number
+            if (isNaN(position)) {
+                console.error('Received position is not a valid number:', data.value);
+                return; // Abort processing
+            }
+
+            // Check if position is within valid range
+            if (position >= 0 && position <= 360) {
+                lineAngle = position - 90;
+                drawCircleAndLines();
+            } else {
+                console.warn('Received position is out of range:', position);
+            }
+        }
+        // All other messages are ignored
+    } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+    }
+};
+
+
 
                 ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
@@ -522,6 +582,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+function toggleAuthentication() {
+    if (isAdminLoggedIn) {
+        isLockAuthenticated = !isLockAuthenticated;
+        updateLockButtonState(); // Call the function to update lock button UI
+        sendLockStatus(); // Send the new lock status over WebSocket
+        console.log(`Lock state set to: ${isLockAuthenticated}`);
+    } else {
+        alert("You must be authenticated to use the PSTRotator feature.");
+    }
+}
+
+// Function to update the lock button state
+function updateLockButtonState() {
+    const lockButton = document.getElementById('lockButton');
+    if (isLockAuthenticated) {
+        lockButton.classList.remove('unlocked');
+        lockButton.classList.add('locked');
+    } else {
+        lockButton.classList.remove('locked');
+        lockButton.classList.add('unlocked');
+    }
+}
+
+
             // Main function to initialize the plugin
             function main() {
                 const $ = window.jQuery;
@@ -545,6 +629,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Add click event listener to the inner circle
                 document.getElementById('innerCircle').addEventListener('click', handleInnerCircleClick);
+
+                // Add click event listener to the lock button
+                document.getElementById('lockButton').addEventListener('click', toggleAuthentication);
 
                 loadWebSocket(); // Load WebSocket
                 checkAdminMode(); // Check admin mode
