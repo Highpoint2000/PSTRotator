@@ -1,8 +1,9 @@
+
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.0a) BETA ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.1) BETA  ///
 ///                                                             ///
-///  by Highpoint                         last update: 25.08.24 ///
+///  by Highpoint                         last update: 26.08.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -89,6 +90,8 @@ app.get('/proxy', async (req, res) => {
 const clientIp = '127.0.0.1'; // Define the client IP address
 let lastBearingValue = null; // Variable to store the last bearing value
 let externalWs = null; // Define externalWs as a global variable
+let LockValue = true;
+let lock = true;
 
 // Start the HTTP server and listen on the specified port
 const server = app.listen(port, () => {
@@ -135,6 +138,7 @@ function initializeWebSockets() {
                     const responseMessage = JSON.stringify({
                         type: 'Rotor',
                         value: lastBearingValue || 'No bearing data available',
+						lock: LockValue,
                         source: clientIp
                     });
                     ws.send(responseMessage);
@@ -186,13 +190,19 @@ function initializeWebSockets() {
                 const responseMessage = JSON.stringify({
                     type: 'Rotor',
                     value: lastBearingValue || 'No bearing data available',
+					lock: LockValue,
                     source: clientIp
                 });
                 externalWs.send(responseMessage);
-                logInfo(`Rotor respond ${lastBearingValue}°`);
+                logInfo(`Rotor respond ${lastBearingValue}° and lock ${LockValue}`);
             } else if (messageObject.type === 'Rotor' && messageObject.value !== 'request' && messageObject.source !== '127.0.0.1') {
-                logInfo(`Rotor request ${messageObject.value}° from ${messageObject.source}`);
-                updatePstRotator(messageObject.value); // Update PST Rotator with the received value
+				if (!messageObject.value) {
+					logInfo(`Rotor request lock ${messageObject.lock} from ${messageObject.source}`);
+					LockValue = messageObject.lock;
+				} else {
+					logInfo(`Rotor request ${messageObject.value}° from ${messageObject.source}`);
+					updatePstRotator(messageObject.value); // Update PST Rotator with the received value
+				}
             }
         } catch (error) {
             logError('Error processing message from external WebSocket server: ' + error);
