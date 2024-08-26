@@ -23,8 +23,8 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ## Notes: 
 
-In order to use the plugin sensibly, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/), which provides a web server. The rotor can be moved by clicking on the degree ring or in the middle (manual input).
-A gray line can be defined in the header of the client script, which marks the rotor limit. 
+To use the plugin effectively, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/), which provides a web server. Admins can move the rotor by clicking on the degree ring or in the middle (manual input). The control can also be released to visitors using the on/off lock.
+A gray line that marks the rotor limit can also be defined in the header of the client script. If you don't want this, set the variable to 0.
 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
