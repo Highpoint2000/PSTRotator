@@ -227,13 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
 					filter: hue-rotate(320deg);
                     content: '🔒';
                     font-size: 20px;
-					color: #ffffff; /* Weiße Farbe für das Symbol */
                 }				
                 #lockButton.unlocked::before {
 					filter: hue-rotate(320deg);
                     content: '🔓';
                     font-size: 20px;
-					color: #ffffff; /* Weiße Farbe für das Symbol */
                 }
             `;
             document.head.appendChild(style);
