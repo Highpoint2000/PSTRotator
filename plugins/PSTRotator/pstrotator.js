@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     opacity: 0; /* Initially hidden */
                     transition: opacity 0.5s ease-in-out; /* Smooth fade-in effect */
                     margin-left: 10px; /* Default margin-left for screens wider than 768px */
-                    height: auto;
+                    height: 0px;
                     width: auto;
                 }
                 /* Media Query for screens narrower than 900px */
