@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.1  BETA) ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.1)       ///
 ///                                                             ///
 ///  by Highpoint                        last update: 26.08.24  ///
 ///                                                             ///
@@ -20,7 +20,7 @@ const RotorLimitLineColor = '#808080'; // Set the color for the additional line 
 document.addEventListener('DOMContentLoaded', () => {
     // Delay the execution by 500 milliseconds
     setTimeout(() => {
-        const plugin_version = '2.1 BETA'; // Plugin Version
+        const plugin_version = '2.1'; // Plugin Version
 
         // Global variable to store the IP address
         let ipAddress;
