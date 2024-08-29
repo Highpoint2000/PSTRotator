@@ -6,7 +6,7 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 
 
-## Version 2.1 BETA (only works from webserver version 1.2.6 !!!)
+## Version 2.1 (only works from webserver version 1.2.6 !!!)
 
 - Bugfixing
 - Possibility to publicly release the rotor control added (lock on/off)
