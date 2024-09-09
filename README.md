@@ -6,17 +6,23 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 
 
-## Version 2.1 (only works from webserver version 1.2.6 !!!)
+## Version 2.3 (only works from webserver version 1.2.6 !!!)
 
-- Bugfixing
-- Possibility to publicly release the rotor control added (lock on/off)
+- Fixed configuration is now stored in configPlugin.json
 
 ## Installation notes:
 
 1. [Download]([https://github.com/Highpoint2000/PSTRotator/releases]) the last repository as a zip
 2. Unpack all files into the web server plugins folder (..fm-dx-webserver-main\plugins\PSTRotator)
 3. copy, rename and overwrite the index.js version that matches the web server: \server\index_x.x.x.js to ..fm-dx-webserver-main\server\index.js 
-4. Enable the web server function in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
+4. Stop or close the fm-dx-webserver
+5. Enable the web server function in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
+6. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
+7. Activate the PSTRotator plugin in the settings
+8. Stop or close the fm-dx-webserver
+9. Configure personal settings in the automatically created configPlugin.json (in the specific plugin folder!)
+10. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
+
 5. Edit the line "const PSTRotatorUrl = 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
 6. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
 7. Activate the PSTRotator plugin it in the settings, check the browser console informations 
@@ -29,6 +35,11 @@ A gray line that marks the rotor limit can also be defined in the header of the 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History:
+
+### Version 2.2 (only works from webserver version 1.2.6 !!!)
+
+- Bugfixing
+- Possibility to publicly release the rotor control added (lock on/off)
 
 ### Version 2.0 (only works from webserver version 1.2.6 !!!)
 
