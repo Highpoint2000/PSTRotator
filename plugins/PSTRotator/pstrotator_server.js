@@ -1,9 +1,9 @@
 
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.1)       ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.2)       ///
 ///                                                             ///
-///  by Highpoint                         last update: 26.08.24 ///
+///  by Highpoint                         last update: 09.09.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -11,10 +11,66 @@
 
 /// only works from webserver version 1.2.6 !!!
 
-const PSTRotatorUrl = 'http://127.0.0.1:80'; // Base URL for the PST Rotator software
-const port = 3000; // Port for the internal CORS Proxy (default: 3000)
+const path = require('path');
+const fs = require('fs');
+const { logInfo, logError } = require('./../../server/console');
 
-//////////////////////////////////////////////////////////////
+// Define the path to the configuration file
+const configFilePath = path.join(__dirname, 'configPlugin.json');
+
+// Default values for the configuration file 
+// Do not enter this values !!! Save your configuration in configPlugin.json. This is created automatically when you first start.
+
+const defaultConfig = {
+	PSTRotatorUrl: 'http://127.0.0.1:80', 	// Base URL for the PST Rotator software
+	port: 3000, 							// Port for the internal CORS Proxy (default: 3000)
+	RotorLimitLineLength: 0,			 	// Set the length of the line (default: 67, none: 0)
+    RotorLimitLineAngle: 129, 				// Set the angle of the line (e.g., 180)
+	RotorLimitLineColor:'#808080', 			// Set the color for the additional line (default: #808080)
+};
+
+// Function to merge default config with existing config and remove undefined values
+function mergeConfig(defaultConfig, existingConfig) {
+    // Only keep the keys that are defined in the defaultConfig
+    const updatedConfig = {};
+
+    // Add the existing values that match defaultConfig keys
+    for (const key in defaultConfig) {
+        updatedConfig[key] = key in existingConfig ? existingConfig[key] : defaultConfig[key];
+    }
+
+    return updatedConfig;
+}
+
+// Function to load or create the configuration file
+function loadConfig(filePath) {
+    let existingConfig = {};
+
+    // Check if the configuration file exists
+    if (fs.existsSync(filePath)) {
+        // Read the existing configuration file
+        existingConfig = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    } else {
+        logInfo('DX-Alert configuration not found. Creating configPlugin.json.');
+    }
+
+    // Merge the default config with the existing one, adding missing fields and removing undefined
+    const finalConfig = mergeConfig(defaultConfig, existingConfig);
+
+    // Write the updated configuration back to the file (if changes were made)
+    fs.writeFileSync(filePath, JSON.stringify(finalConfig, null, 2), 'utf-8');
+
+    return finalConfig;
+}
+
+// Load or create the configuration file
+const configPlugin = loadConfig(configFilePath);
+
+// Zugriff auf die Variablen
+const PSTRotatorUrl = configPlugin.PSTRotatorUrl;
+const port = configPlugin.port;
+
+////////////////////////////////////////////////////////////////
 
 // Load port configuration from config.json
 const config = require('./../../config.json');
@@ -23,9 +79,6 @@ const externalWsUrl = `ws://127.0.0.1:${webserverPort}/extra`;
 
 // Function to check and install missing NewModules
 const { execSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-
 const NewModules = [
     'jsdom',
 ];
@@ -57,9 +110,6 @@ const fetch = require('node-fetch'); // For making HTTP requests
 const { JSDOM } = require('jsdom'); // For parsing and manipulating HTML
 const WebSocket = require('ws'); // For WebSocket communication
 const app = express(); // Initialize Express application
-
-// Import custom logging functions
-const { logInfo, logError } = require('./../../server/console');
 
 // Middleware to handle CORS (Cross-Origin Resource Sharing) settings
 app.use((req, res, next) => {
