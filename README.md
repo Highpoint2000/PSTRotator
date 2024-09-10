@@ -31,10 +31,6 @@ The following variables can be changed in the configPlugin.json:
 	RotorLimitLineLength: 0,		// Set the length of the line (default: 67, none: 0)
    	RotorLimitLineAngle: 129, 		// Set the angle of the line (e.g., 180)
 	RotorLimitLineColor:'#808080', 		// Set the color for the additional line (default: #808080)
-	
-	RotorLimitLineLength: 67,		// Set the length of the line (default: 67, none: 0) 
-  	RotorLimitLineAngle: 129, 		// Set the angle of the line (e.g., 180)
-  	RotorLimitLineColor: "#808080" 		// Set the color for the additional line (default: #808080)
 
 ## Notes: 
 
