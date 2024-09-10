@@ -22,6 +22,20 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 	- Edit the line "PSTRotatorUrl: 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
 10. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
 
+## Configuration options:
+
+The following variables can be changed in the configPlugin.json:
+
+	PSTRotatorUrl: 'http://127.0.0.1:80', 	// Base URL for the PST Rotator software
+	port: 3000, 							// Port for the internal CORS Proxy (default: 3000)
+	RotorLimitLineLength: 0,			 	// Set the length of the line (default: 67, none: 0)
+   	RotorLimitLineAngle: 129, 				// Set the angle of the line (e.g., 180)
+	RotorLimitLineColor:'#808080', 			// Set the color for the additional line (default: #808080)
+	
+	RotorLimitLineLength: 67,	// Set the length of the line (default: 67, none: 0) 
+  	RotorLimitLineAngle: 129, 	// Set the angle of the line (e.g., 180)
+  	RotorLimitLineColor: "#808080" 	// Set the color for the additional line (default: #808080)
+
 ## Notes: 
 
 To use the plugin effectively, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/), which provides a web server. Admins can move the rotor by clicking on the degree ring or in the middle (manual input). The control can also be released to visitors using the on/off lock.
