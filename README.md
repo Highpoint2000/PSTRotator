@@ -4,7 +4,7 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/d2ea5255-c144-45da-ab23-2b4bbd5ab518)
 
-## Version 2.2 (only works from webserver version 1.2.8 !!!)
+## Version 2.3 (only works from webserver version 1.2.8 !!!)
 
 - New notification design (Toast Notification)
 
