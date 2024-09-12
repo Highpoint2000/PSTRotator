@@ -1,15 +1,15 @@
 
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.2)       ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3)       ///
 ///                                                             ///
-///  by Highpoint                         last update: 09.09.24 ///
+///  by Highpoint                         last update: 12.09.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
-/// only works from webserver version 1.2.6 !!!
+/// only works from webserver version 1.2.8 !!!
 
 const path = require('path');
 const fs = require('fs');
