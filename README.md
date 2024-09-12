@@ -4,9 +4,9 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/d2ea5255-c144-45da-ab23-2b4bbd5ab518)
 
-## Version 2.2 (only works from webserver version 1.2.6 !!!)
+## Version 2.2 (only works from webserver version 1.2.8 !!!)
 
-- Fixed configuration is now stored in configPlugin.json
+- New notification design (Toast Notification)
 
 ## Installation notes:
 
@@ -40,6 +40,10 @@ A gray line that marks the rotor limit can also be defined in the header of the 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History:
+
+### Version 2.2 (only works from webserver version 1.2.6 !!!)
+
+- Fixed configuration is now stored in configPlugin.json
 
 ### Version 2.1 (only works from webserver version 1.2.6 !!!)
 
