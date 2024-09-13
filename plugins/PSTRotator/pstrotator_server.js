@@ -1,15 +1,15 @@
 
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3)       ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3a)      ///
 ///                                                             ///
-///  by Highpoint                         last update: 12.09.24 ///
+///  by Highpoint                         last update: 13.09.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
-/// only works from webserver version 1.2.8 !!!
+/// only works from webserver version 1.2.8.1 !!!
 
 const path = require('path');
 const fs = require('fs');
@@ -75,7 +75,7 @@ const port = configPlugin.port;
 // Load port configuration from config.json
 const config = require('./../../config.json');
 const webserverPort = config.webserver.webserverPort || 8080; // Use the port from config.json or default to 8080
-const externalWsUrl = `ws://127.0.0.1:${webserverPort}/extra`;
+const externalWsUrl = `ws://127.0.0.1:${webserverPort}/data_plugins`;
 
 // Function to check and install missing NewModules
 const { execSync } = require('child_process');
