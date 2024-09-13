@@ -12,15 +12,14 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 1. [Download]([https://github.com/Highpoint2000/PSTRotator/releases]) the last repository as a zip
 2. Unpack all files into the web server plugins folder (..fm-dx-webserver-main\plugins\PSTRotator)
-3. copy, rename and overwrite the index.js version that matches the web server: \server\index_x.x.x.js to ..fm-dx-webserver-main\server\index.js 
-4. Stop or close the fm-dx-webserver
-5. Enable the web server function in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
-6. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
-7. Activate the PSTRotator plugin in the settings
-8. Stop or close the fm-dx-webserver
-9. Configure personal settings in the automatically created configPlugin.json (in the specific plugin folder!)
+3. Stop or close the fm-dx-webserver
+4. Enable the web server function in the [PSTRotator (AZ) software](https://www.pstrotator.com/)
+5. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
+6. Activate the PSTRotator plugin in the settings
+7. Stop or close the fm-dx-webserver
+8. Configure personal settings in the automatically created configPlugin.json (in the specific plugin folder!)
 	- Edit the line "PSTRotatorUrl: 'http://127.0.0.1:80';" in the pstrotator_server.js and enter the IP:Port of your PST Rotator web server
-10. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
+9. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
 
 ## Configuration options:
 
