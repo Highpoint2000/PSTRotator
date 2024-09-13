@@ -1,14 +1,14 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3)       ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3a)      ///
 ///                                                             ///
-///  by Highpoint                        last update: 12.09.24  ///
+///  by Highpoint                        last update: 13.09.24  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
-// Only works from webserver version 1.2.8 !!!
+// Only works from webserver version 1.2.8.1 !!!
 
 // Additional rotor limits line variables
 let RotorLimitLineLength = 0; // Set the length of the line (default: 67, none: 0)
@@ -66,7 +66,7 @@ function loadPSTRotator() {
 		let isTuneLoggedIn;
 		let isLockAuthenticated; 
 
-        // Extract WebserverURL and WebserverPORT from the current page URL
+        // data_pluginsct WebserverURL and WebserverPORT from the current page URL
         const currentURL = new URL(window.location.href);
         const WebserverURL = currentURL.hostname;
         const WebserverPath = currentURL.pathname.replace(/setup/g, '');
@@ -75,7 +75,7 @@ function loadPSTRotator() {
         // Determine WebSocket protocol and port
         const protocol = currentURL.protocol === 'https:' ? 'wss:' : 'ws:'; // Determine WebSocket protocol
         const WebsocketPORT = WebserverPORT; // Use the same port as HTTP/HTTPS
-        const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}${WebserverPath}extra`; // WebSocket URL with /extra
+        const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}${WebserverPath}data_plugins`; // WebSocket URL with /data_plugins
 
         // Configuration variables
         const JQUERY_VERSION = '3.6.0'; // Version of jQuery to use
@@ -557,7 +557,7 @@ ws.onmessage = (event) => {
 
             console.log('Received:', data);
 
-            // Extract position and lock from JSON data
+            // data_pluginsct position and lock from JSON data
             const position = parseFloat(data.value);
             const lock = data.lock;
 
