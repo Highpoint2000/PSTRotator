@@ -19,7 +19,7 @@ let RotorLimitLineColor = '#808080'; // Set the color for the additional line (d
 
 (() => {
 	
-const plugin_version = '2.3b BETA'; // Plugin Version
+const plugin_version = '2.3b'; // Plugin Version
 
 // Function to load configPlugin.json from /js/plugins/PSTRotator directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
