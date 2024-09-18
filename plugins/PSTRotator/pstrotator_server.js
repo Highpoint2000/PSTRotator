@@ -1,15 +1,19 @@
 
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3a)      ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3b)      ///
 ///                                                             ///
-///  by Highpoint                         last update: 13.09.24 ///
+///  by Highpoint                         last update: 18.09.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
 /// only works from webserver version 1.2.8.1 !!!
+
+const OnlyViewModus = false;
+
+///////////////////////////////////////////////////////////////////	
 
 const path = require('path');
 const fs = require('fs');
@@ -184,6 +188,10 @@ function initializeWebSockets() {
 
                 if (messageObject.type === 'Rotor' && messageObject.value === 'request') {
                     logInfo('Received request for bearing value');
+					
+					if (OnlyViewModus) {
+						LockValue = true;
+					}
 
                     const responseMessage = JSON.stringify({
                         type: 'Rotor',
@@ -236,6 +244,10 @@ function initializeWebSockets() {
 
             if (messageObject.type === 'Rotor' && messageObject.value === 'request' && messageObject.source !== '127.0.0.1') {
                 logInfo(`Rotor request from ${messageObject.source}`);
+				
+				if (OnlyViewModus) {
+					LockValue = true;
+				}
 
                 const responseMessage = JSON.stringify({
                     type: 'Rotor',
@@ -248,10 +260,31 @@ function initializeWebSockets() {
             } else if (messageObject.type === 'Rotor' && messageObject.value !== 'request' && messageObject.source !== '127.0.0.1') {
 				if (!messageObject.value) {
 					logInfo(`Rotor request lock ${messageObject.lock} from ${messageObject.source}`);
-					LockValue = messageObject.lock;
+					
+					if (OnlyViewModus) {
+						LockValue = true;
+					} else {
+						LockValue = messageObject.lock;
+					}
+					
+					const responseMessage = JSON.stringify({
+						type: 'Rotor',
+						value: lastBearingValue || 'No bearing data available',
+						lock: LockValue,
+						source: clientIp
+					});
+					
+					externalWs.send(responseMessage);			
+					logInfo(`Rotor respond ${lastBearingValue}° and lock ${LockValue}`);
+					
 				} else {
-					logInfo(`Rotor request ${messageObject.value}° from ${messageObject.source}`);
-					updatePstRotator(messageObject.value); // Update PST Rotator with the received value
+					
+					if (OnlyViewModus) {
+						LockValue = true;
+					} else {					
+						logInfo(`Rotor request ${messageObject.value}° from ${messageObject.source}`);
+						updatePstRotator(messageObject.value); // Update PST Rotator with the received value
+					}
 				}
             }
         } catch (error) {
