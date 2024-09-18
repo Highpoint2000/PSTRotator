@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3a)      ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3b)      ///
 ///                                                             ///
-///  by Highpoint                        last update: 13.09.24  ///
+///  by Highpoint                        last update: 18.09.24  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -19,7 +19,7 @@ let RotorLimitLineColor = '#808080'; // Set the color for the additional line (d
 
 (() => {
 	
-const plugin_version = '2.3'; // Plugin Version
+const plugin_version = '2.3b BETA'; // Plugin Version
 
 // Function to load configPlugin.json from /js/plugins/PSTRotator directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
@@ -563,6 +563,7 @@ ws.onmessage = (event) => {
 
             // Check if lock status is received and differs from current status
             if (lock !== undefined && lock !== isLockAuthenticated) {
+				console.log(lock);
                 isLockAuthenticated = lock; // Update isLockAuthenticated
                 updateLockButtonState(); // Update the lock button UI based on the new state
                 console.log(`Lock state updated to: ${isLockAuthenticated}`);
