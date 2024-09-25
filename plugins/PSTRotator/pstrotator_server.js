@@ -1,9 +1,9 @@
 
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3b)      ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3c)      ///
 ///                                                             ///
-///  by Highpoint                         last update: 18.09.24 ///
+///  by Highpoint                         last update: 25.09.24 ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -11,16 +11,15 @@
 
 /// only works from webserver version 1.2.8.1 !!!
 
-const OnlyViewModus = false;
-
 ///////////////////////////////////////////////////////////////////	
 
 const path = require('path');
 const fs = require('fs');
 const { logInfo, logError } = require('./../../server/console');
 
-// Define the path to the configuration file
-const configFilePath = path.join(__dirname, 'configPlugin.json');
+// Define the paths to the old and new configuration files
+const oldConfigFilePath = path.join(__dirname, 'configPlugin.json');
+const newConfigFilePath = path.join(__dirname, './../../plugins_configs/pstrotator.json');
 
 // Default values for the configuration file 
 // Do not enter this values !!! Save your configuration in configPlugin.json. This is created automatically when you first start.
@@ -31,11 +30,11 @@ const defaultConfig = {
 	RotorLimitLineLength: 0,			 	// Set the length of the line (default: 67, none: 0)
     RotorLimitLineAngle: 129, 				// Set the angle of the line (e.g., 180)
 	RotorLimitLineColor:'#808080', 			// Set the color for the additional line (default: #808080)
+	OnlyViewModus: false					// Set to true if you want to block use for everyone
 };
 
 // Function to merge default config with existing config and remove undefined values
 function mergeConfig(defaultConfig, existingConfig) {
-    // Only keep the keys that are defined in the defaultConfig
     const updatedConfig = {};
 
     // Add the existing values that match defaultConfig keys
@@ -46,16 +45,41 @@ function mergeConfig(defaultConfig, existingConfig) {
     return updatedConfig;
 }
 
-// Function to load or create the configuration file
+// Function to load the old config, move it to the new location, and delete the old one
+function migrateOldConfig(oldFilePath, newFilePath) {
+    if (fs.existsSync(oldFilePath)) {
+        // Load the old config
+        const oldConfig = JSON.parse(fs.readFileSync(oldFilePath, 'utf-8'));
+        
+        // Save the old config to the new location
+        fs.writeFileSync(newFilePath, JSON.stringify(oldConfig, null, 2), 'utf-8');
+        logInfo(`Old config migrated to ${newFilePath}`);
+
+        // Delete the old config file
+        fs.unlinkSync(oldFilePath);
+        logInfo(`Old config ${oldFilePath} deleted`);
+        
+        return oldConfig;
+    }
+
+    return null;  // No old config found
+}
+
 function loadConfig(filePath) {
     let existingConfig = {};
 
-    // Check if the configuration file exists
-    if (fs.existsSync(filePath)) {
-        // Read the existing configuration file
-        existingConfig = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    // Try to migrate the old config if it exists
+    const migratedConfig = migrateOldConfig(oldConfigFilePath, filePath);
+    if (migratedConfig) {
+        existingConfig = migratedConfig;
     } else {
-        logInfo('DX-Alert configuration not found. Creating configPlugin.json.');
+        // Check if the new configuration file exists
+        if (fs.existsSync(filePath)) {
+            // Read the existing configuration file
+            existingConfig = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        } else {
+            logInfo('Scanner configuration not found. Creating scanner.json.');
+        }
     }
 
     // Merge the default config with the existing one, adding missing fields and removing undefined
@@ -68,13 +92,69 @@ function loadConfig(filePath) {
 }
 
 // Load or create the configuration file
-const configPlugin = loadConfig(configFilePath);
+const configPlugin = loadConfig(newConfigFilePath);
 
-// Zugriff auf die Variablen
+// Access to the variables
 const PSTRotatorUrl = configPlugin.PSTRotatorUrl;
 const port = configPlugin.port;
+const RotorLimitLineLength = configPlugin.RotorLimitLineLength;
+const RotorLimitLineAngle = configPlugin.RotorLimitLineAngle;
+const RotorLimitLineColor = configPlugin.RotorLimitLineColor;
+const OnlyViewModus = configPlugin.OnlyViewModus;
 
-////////////////////////////////////////////////////////////////
+// Path to the target JavaScript file
+const PSTrotatorClientFile = path.join(__dirname, 'pstrotator.js');
+
+// Function to start the process
+function updateSettings() {
+  // Read the target file
+  fs.readFile(PSTrotatorClientFile, 'utf8', (err, targetData) => {
+    if (err) {
+      logError('Error reading the pstrotator.js file:', err);
+      return;
+    }
+
+    // Check if the variables already exist
+    let hasRotorLimitLineLength = /const RotorLimitLineLength = .+;/.test(targetData);
+    let hasRotorLimitLineAngle = /const RotorLimitLineAngle = .+;/.test(targetData);
+	let hasRotorLimitLineColor = /const RotorLimitLineColor = .+;/.test(targetData);
+
+    // Replace or add the definitions
+    let updatedData = targetData;
+
+    if (hasRotorLimitLineLength) {
+      updatedData = updatedData.replace(/const RotorLimitLineLength = .*;/, `const RotorLimitLineLength = ${RotorLimitLineLength};`);
+    } else {
+      updatedData = `const RotorLimitLineLength = ${RotorLimitLineLength};\n` + updatedData;
+    }
+
+    if (hasRotorLimitLineAngle) {
+      updatedData = updatedData.replace(/const RotorLimitLineAngle = .*;/, `const RotorLimitLineAngle = ${RotorLimitLineAngle};`);
+    } else {
+      updatedData = `const RotorLimitLineAngle = ${RotorLimitLineAngle};\n` + updatedData;
+    }
+	
+	if (hasRotorLimitLineColor) {
+      updatedData = updatedData.replace(/const RotorLimitLineColor = .*;/, `const RotorLimitLineColor = '${RotorLimitLineColor}';`);
+    } else {
+      updatedData = `const RotorLimitLineColor = '${RotorLimitLineColor}';\n` + updatedData;
+    }
+
+    // Update/write the target file
+    fs.writeFile(PSTrotatorClientFile, updatedData, 'utf8', (err) => {
+      if (err) {
+        logError('Error writing to the pstrotator.js file:', err);
+        return;
+      }
+      logInfo('PSTrotator.js file successfully updated');
+    });
+  });
+}
+
+// Start the process
+updateSettings();
+
+///////////////////////////////////////////////////////////////
 
 // Load port configuration from config.json
 const config = require('./../../config.json');
