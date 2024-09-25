@@ -1,8 +1,8 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3b)      ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3c)      ///
 ///                                                             ///
-///  by Highpoint                        last update: 18.09.24  ///
+///  by Highpoint                        last update: 25.09.24  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -10,47 +10,16 @@
 
 // Only works from webserver version 1.2.8.1 !!!
 
-// Additional rotor limits line variables
-let RotorLimitLineLength = 0; // Set the length of the line (default: 67, none: 0)
-let RotorLimitLineAngle = 129; // Set the angle of the line (e.g., 180)
-let RotorLimitLineColor = '#808080'; // Set the color for the additional line (default: #808080)
-
 ////////////////////////////////////////////////////////////////////
 
 (() => {
 	
-const plugin_version = '2.3b'; // Plugin Version
+const plugin_version = '2.3c'; 			// Plugin Version
+const RotorLimitLineLength = 67; 		// This value is automatically updated via the config file
+const RotorLimitLineAngle = 129; 		// This value is automatically updated via the config file
+const RotorLimitLineColor = '#808080'; 	// This value is automatically updated via the config file
 
-// Function to load configPlugin.json from /js/plugins/PSTRotator directory (WINDOWS SYSTEMS ONLY)
-function loadConfig() {
-    return fetch('/js/plugins/PSTRotator/configPlugin.json') // Updated path to /js/plugins/PSTRotator
-        .then(response => {
-            if (!response.ok) {
-                console.warn('Config file not found, using default values.');
-                return null; // Return null to trigger default values
-            }
-            return response.json();
-        })
-        .then(config => {
-            if (config) {
-                // Override default values with values from config.json
-                RotorLimitLineLength = config.RotorLimitLineLength || RotorLimitLineLength;
-                RotorLimitLineAngle = config.RotorLimitLineAngle || RotorLimitLineAngle;
-				RotorLimitLineColor = config.RotorLimitLineColor || RotorLimitLineColor;
-                console.log("PSTRotator successfully loaded config from configPlugin.json.");
-            } else {
-                console.log("Using default configuration values.");
-            }
-        })
-        .catch(error => {
-            console.log("PSTRotator failed to load configPlugin.json:", error);
-        });
-}
-
-// Load config on startup and then load RDSLogger
-loadConfig().then(() => {
-    loadPSTRotator();
-});
+loadPSTRotator();
 
 function loadPSTRotator() {
 	
