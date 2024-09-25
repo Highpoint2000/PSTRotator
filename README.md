@@ -4,7 +4,7 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/d2ea5255-c144-45da-ab23-2b4bbd5ab518)
 
-### Version 2.3c (only works from webserver version 1.2.8.1 !!!)
+## Version 2.3c (only works from webserver version 1.2.8.1 !!!)
 
 - configPlugin.json is moved to ../fm-dx-webserver-main/plugins_configs/pstrotator.json
 
