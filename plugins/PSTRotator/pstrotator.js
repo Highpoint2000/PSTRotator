@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3c)      ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3b)      ///
 ///                                                             ///
 ///  by Highpoint                        last update: 25.09.24  ///
 ///                                                             ///
@@ -14,7 +14,7 @@
 
 (() => {
 	
-const plugin_version = '2.3c'; 			// Plugin Version
+const plugin_version = '2.3b'; 			// Plugin Version
 const RotorLimitLineLength = 67; 		// This value is automatically updated via the config file
 const RotorLimitLineAngle = 129; 		// This value is automatically updated via the config file
 const RotorLimitLineColor = '#808080'; 	// This value is automatically updated via the config file
