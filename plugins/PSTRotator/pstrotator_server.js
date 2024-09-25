@@ -1,7 +1,7 @@
 
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3c)      ///
+///  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3b)      ///
 ///                                                             ///
 ///  by Highpoint                         last update: 25.09.24 ///
 ///                                                             ///
