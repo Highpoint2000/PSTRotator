@@ -49,7 +49,7 @@ function loadPSTRotator() {
         // Configuration variables
         const JQUERY_VERSION = '3.6.0'; // Version of jQuery to use
         const JQUERY_URL = `https://code.jquery.com/jquery-${JQUERY_VERSION}.min.js`; // URL for jQuery
-        const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}${WebserverPath}js/plugins/PSTRotator/Rotor.png`; // URL for background image
+        const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}${WebserverPath}js/plugins/PSTRotator/rotor.png`; // URL for background image
 
         let ctx; // Canvas context
         let x, y; // Center coordinates of the canvas
