@@ -4,10 +4,11 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/3254a114-8c31-4fff-9ef0-bbfce0e335a4)
 
-## Version 2.3b (only works from webserver version 1.2.8.1 !!!)
+## Version 2.3c
 
-- configPlugin.json is moved to ../fm-dx-webserver-main/plugins_configs/pstrotator.json
-- Only view mode can be configured on the server side (complete blocking of the control!)
+- rotor.png copied to /web/images for Linux compatibility
+- Daily update check for admin
+- Only the view mode has been removed and an admin lock timer has been set up
 
 ## Installation notes:
 
@@ -31,7 +32,8 @@ The following variables can be changed in the configPlugin.json:
 	RotorLimitLineLength: 0,		// Set the length of the line (default: 67, none: 0)
    	RotorLimitLineAngle: 129, 		// Set the angle of the line (e.g., 180)
 	RotorLimitLineColor:'#808080', 		// Set the color for the additional line (default: #808080)
-	OnlyViewModus: false			// Set to true if you want to block use for everyone
+	lockStartTime: '',                         // Start time for locking in HH:MM format (empty means no locking / 00:00 = 24h lock)
+    lockEndTime: ''                            // End time for locking in HH:MM format (empty means no locking) / 00:00 = 24h lock)
 
 ## Notes: 
 
@@ -41,6 +43,11 @@ A gray line that marks the rotor limit can also be defined in the header of the 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History:
+
+### Version 2.3b 
+
+- configPlugin.json is moved to ../fm-dx-webserver-main/plugins_configs/pstrotator.json
+- Only view mode can be configured on the server side (complete blocking of the control!)
 
 ### Version 2.3a (only works from webserver version 1.2.8.1 !!!)
 
