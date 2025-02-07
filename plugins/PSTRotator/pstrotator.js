@@ -1,9 +1,9 @@
 (() => {
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3c)      ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3d)      ///
 ///                                                             ///
-///  by Highpoint                        last update: 21.01.25  ///
+///  by Highpoint                        last update: 08.02.25  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -16,7 +16,7 @@ const updateInfo = true; 				// Enable or disable version check
 
 ////////////////////////////////////////////////////////////////////
 
-const plugin_version = '2.3c'; 			// Plugin Version
+const plugin_version = '2.3d'; 			// Plugin Version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
 const plugin_JSfile = 'main/plugins/PSTRotator/pstrotator.js'
 const plugin_name = 'PST Rotator';
