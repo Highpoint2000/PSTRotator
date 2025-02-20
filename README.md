@@ -32,7 +32,7 @@ The following variables can be changed in the configPlugin.json:
    	RotorLimitLineAngle: 129, 		// Set the angle of the line (e.g., 180)
 	RotorLimitLineColor:'#808080', 		// Set the color for the additional line (default: #808080)
 	lockStartTime: '',                      // Start time for locking in HH:MM format (empty means no locking / 00:00 = 24h lock)
-    lockEndTime: ''                             // End time for locking in HH:MM format (empty means no locking) / 00:00 = 24h lock)
+    lockEndTime: ''                         // End time for locking in HH:MM format (empty means no locking) / 00:00 = 24h lock)
 
 ## Notes: 
 
