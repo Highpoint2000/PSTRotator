@@ -4,10 +4,10 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/3254a114-8c31-4fff-9ef0-bbfce0e335a4)
 
-## Version 2.3d
+## Version 2.3e
 
-- Rotor can now be controlled in admin mode even during the lock time
-
+- Minor adjustment for mobile design
+- Audio issue fixed
 
 ## Installation notes:
 
@@ -42,6 +42,10 @@ A gray line that marks the rotor limit can also be defined in the header of the 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History:
+
+### Version 2.3d
+
+- Rotor can now be controlled in admin mode even during the lock time
 
 ### Version 2.3c
 
