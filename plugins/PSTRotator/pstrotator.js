@@ -1,9 +1,9 @@
 (() => {
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3d)      ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3e)      ///
 ///                                                             ///
-///  by Highpoint                        last update: 08.02.25  ///
+///  by Highpoint                        last update: 25.03.25  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
@@ -16,7 +16,7 @@ const updateInfo = true; 				// Enable or disable version check
 
 ////////////////////////////////////////////////////////////////////
 
-const plugin_version = '2.3d'; 			// Plugin Version
+const plugin_version = '2.3e'; 			// Plugin Version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
 const plugin_JSfile = 'main/plugins/PSTRotator/pstrotator.js'
 const plugin_name = 'PST Rotator';
@@ -24,7 +24,7 @@ const plugin_name = 'PST Rotator';
 let isTuneAuthenticated;
 const PluginUpdateKey = `${plugin_name}_lastUpdateNotification`; // Unique key for localStorage
 
-loadPSTRotator();
+setTimeout(loadPSTRotator, 500);
 function loadPSTRotator() {
 	
 		// Delay the execution by 500 milliseconds
@@ -206,7 +206,7 @@ function loadPSTRotator() {
                 /* Media Query for screens narrower than 768px */
                 @media (max-width: 768px) {
                     #containerRotator {
-                        margin-top: 190px;
+                        margin-top: 240px;
                         height: 110px;
                         width: 240px; /* Ensure the width is set for centering */
                         margin-left: auto;
