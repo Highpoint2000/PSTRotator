@@ -48,7 +48,8 @@ To use the plugin effectively, you need a remote-capable rotor and the [PSTRotat
 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
-## History:
+<details>
+  <summary>History</summary>
 
 ### Version 2.3e
 
