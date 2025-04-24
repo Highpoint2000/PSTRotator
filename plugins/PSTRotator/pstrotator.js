@@ -1,148 +1,131 @@
 (() => {
 ///////////////////////////////////////////////////////////////////
 ///                                                             ///
-///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.3e)      ///
+///  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4)       ///
 ///                                                             ///
-///  by Highpoint                        last update: 25.03.25  ///
+///  by Highpoint                        last update: 22.04.25  ///
 ///                                                             ///
 ///  https://github.com/Highpoint2000/PSTRotator                ///
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
-const RotorLimitLineLength = 67; 		// This value is automatically updated via the config file
-const RotorLimitLineAngle = 129; 		// This value is automatically updated via the config file
-const RotorLimitLineColor = '#808080'; 	// This value is automatically updated via the config file
-const updateInfo = true; 				// Enable or disable version check	
+const RotorLimitLineLength = 67;      // automatisch via Config aktualisiert
+const RotorLimitLineAngle  = 129;     // automatisch via Config aktualisiert
+const RotorLimitLineColor  = '#808080';// automatisch via Config aktualisiert
+const updateInfo           = true;    // Version Check an/aus
 
-////////////////////////////////////////////////////////////////////
+const plugin_version       = '2.4';
+const plugin_path          = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
+const plugin_JSfile        = 'main/plugins/PSTRotator/pstrotator.js';
+const plugin_name          = 'PST Rotator';
 
-const plugin_version = '2.3e'; 			// Plugin Version
-const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
-const plugin_JSfile = 'main/plugins/PSTRotator/pstrotator.js'
-const plugin_name = 'PST Rotator';
+const PluginUpdateKey      = `${plugin_name}_lastUpdateNotification`;
+const FOLLOW_PLUGIN_NAME   = 'ES Follow';
 
 let isTuneAuthenticated;
-const PluginUpdateKey = `${plugin_name}_lastUpdateNotification`; // Unique key for localStorage
+let isAdminLoggedIn;
+let isTuneLoggedIn;
+let isLockAuthenticated;
+let follow = false;  
 
 setTimeout(loadPSTRotator, 500);
 function loadPSTRotator() {
-	
-		// Delay the execution by 500 milliseconds
-		setTimeout(() => {
-			
-			
-		  // Function to check if the notification was shown today
-  function shouldShowNotification() {
-    const lastNotificationDate = localStorage.getItem(PluginUpdateKey);
-    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+    setTimeout(() => {
+        // Function to check if the notification was shown today
+        function shouldShowNotification() {
+            const lastNotificationDate = localStorage.getItem(PluginUpdateKey);
+            const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
-    if (lastNotificationDate === today) {
-      return false; // Notification already shown today
-    }
-    // Update the date in localStorage to today
-    localStorage.setItem(PluginUpdateKey, today);
-    return true;
-  }
-
-  // Function to check plugin version
-  function checkPluginVersion() {
-    // Fetch and evaluate the plugin script
-    fetch(`${plugin_path}${plugin_JSfile}`)
-      .then(response => response.text())
-      .then(script => {
-        // Search for plugin_version in the external script
-        const pluginVersionMatch = script.match(/const plugin_version = '([\d.]+[a-z]*)?';/);
-        if (!pluginVersionMatch) {
-          console.error(`${plugin_name}: Plugin version could not be found`);
-          return;
-        }
-
-        const externalPluginVersion = pluginVersionMatch[1];
-
-        // Function to compare versions
-		function compareVersions(local, remote) {
-			const parseVersion = (version) =>
-				version.split(/(\d+|[a-z]+)/i).filter(Boolean).map((part) => (isNaN(part) ? part : parseInt(part, 10)));
-
-			const localParts = parseVersion(local);
-			const remoteParts = parseVersion(remote);
-
-			for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
-				const localPart = localParts[i] || 0; // Default to 0 if part is missing
-				const remotePart = remoteParts[i] || 0;
-
-				if (typeof localPart === 'number' && typeof remotePart === 'number') {
-					if (localPart > remotePart) return 1;
-					if (localPart < remotePart) return -1;
-				} else if (typeof localPart === 'string' && typeof remotePart === 'string') {
-					// Lexicographical comparison for strings
-					if (localPart > remotePart) return 1;
-					if (localPart < remotePart) return -1;
-				} else {
-					// Numeric parts are "less than" string parts (e.g., `3.5` < `3.5a`)
-					return typeof localPart === 'number' ? -1 : 1;
-				}
-			}
-
-			return 0; // Versions are equal
-		}
-
-
-        // Check version and show notification if needed
-        const comparisonResult = compareVersions(plugin_version, externalPluginVersion);
-        if (comparisonResult === 1) {
-          // Local version is newer than the external version
-          console.log(`${plugin_name}: The local version is newer than the plugin version.`);
-        } else if (comparisonResult === -1) {
-          // External version is newer and notification should be shown
-          if (shouldShowNotification()) {
-            console.log(`${plugin_name}: Plugin update available: ${plugin_version} -> ${externalPluginVersion}`);
-			sendToast('warning important', `${plugin_name}`, `Update available:<br>${plugin_version} -> ${externalPluginVersion}`, false, false);
+            if (lastNotificationDate === today) {
+                return false; // Notification already shown today
             }
-        } else {
-          // Versions are the same
-          console.log(`${plugin_name}: The local version matches the plugin version.`);
+            // Update the date in localStorage to today
+            localStorage.setItem(PluginUpdateKey, today);
+            return true;
         }
-      })
-      .catch(error => {
-        console.error(`${plugin_name}: Error fetching the plugin script:`, error);
-      });
-	}
-			
+
+        // Function to check plugin version
+        function checkPluginVersion() {
+            fetch(`${plugin_path}${plugin_JSfile}`)
+                .then(response => response.text())
+                .then(script => {
+                    const pluginVersionMatch = script.match(/const plugin_version = '([\d.]+[a-z]*)?';/);
+                    if (!pluginVersionMatch) {
+                        console.error(`${plugin_name}: Plugin version could not be found`);
+                        return;
+                    }
+
+                    const externalPluginVersion = pluginVersionMatch[1];
+
+                    function compareVersions(local, remote) {
+                        const parseVersion = (version) =>
+                            version.split(/(\d+|[a-z]+)/i).filter(Boolean).map((part) => (isNaN(part) ? part : parseInt(part, 10)));
+
+                        const localParts = parseVersion(local);
+                        const remoteParts = parseVersion(remote);
+
+                        for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
+                            const localPart = localParts[i] || 0;
+                            const remotePart = remoteParts[i] || 0;
+
+                            if (typeof localPart === 'number' && typeof remotePart === 'number') {
+                                if (localPart > remotePart) return 1;
+                                if (localPart < remotePart) return -1;
+                            } else if (typeof localPart === 'string' && typeof remotePart === 'string') {
+                                if (localPart > remotePart) return 1;
+                                if (localPart < remotePart) return -1;
+                            } else {
+                                return typeof localPart === 'number' ? -1 : 1;
+                            }
+                        }
+
+                        return 0;
+                    }
+
+                    const comparisonResult = compareVersions(plugin_version, externalPluginVersion);
+                    if (comparisonResult === 1) {
+                        console.log(`${plugin_name}: The local version is newer than the plugin version.`);
+                    } else if (comparisonResult === -1) {
+                        if (shouldShowNotification()) {
+                            console.log(`${plugin_name}: Plugin update available: ${plugin_version} -> ${externalPluginVersion}`);
+                            sendToast('warning important', `${plugin_name}`, `Update available:<br>${plugin_version} -> ${externalPluginVersion}`, false, false);
+                        }
+                    } else {
+                        console.log(`${plugin_name}: The local version matches the plugin version.`);
+                    }
+                })
+                .catch(error => {
+                    console.error(`${plugin_name}: Error fetching the plugin script:`, error);
+                });
+        }
 
         // Global variable to store the IP address
         let ipAddress;
-
-        // Flag to indicate whether authentication is successful
-        let isTuneAuthenticated;
-		let isAdminLoggedIn;
-		let isTuneLoggedIn;
-		let isLockAuthenticated; 
 
         // data_pluginsct WebserverURL and WebserverPORT from the current page URL
         const currentURL = new URL(window.location.href);
         const WebserverURL = currentURL.hostname;
         const WebserverPath = currentURL.pathname.replace(/setup/g, '');
-        let WebserverPORT = currentURL.port || (currentURL.protocol === 'https:' ? '443' : '80'); // Default ports if not specified
+        let WebserverPORT = currentURL.port || (currentURL.protocol === 'https:' ? '443' : '80');
 
         // Determine WebSocket protocol and port
-        const protocol = currentURL.protocol === 'https:' ? 'wss:' : 'ws:'; // Determine WebSocket protocol
-        const WebsocketPORT = WebserverPORT; // Use the same port as HTTP/HTTPS
-        const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}${WebserverPath}data_plugins`; // WebSocket URL with /data_plugins
+        const protocol = currentURL.protocol === 'https:' ? 'wss:' : 'ws:';
+        const WebsocketPORT = WebserverPORT;
+        const WEBSOCKET_URL = `${protocol}//${WebserverURL}:${WebsocketPORT}${WebserverPath}data_plugins`;
 
         // Configuration variables
-        const JQUERY_VERSION = '3.6.0'; // Version of jQuery to use
-        const JQUERY_URL = `https://code.jquery.com/jquery-${JQUERY_VERSION}.min.js`; // URL for jQuery
-        const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}${WebserverPath}images/rotor.png`; // URL for background image
+        const JQUERY_VERSION = '3.6.0';
+        const JQUERY_URL = `https://code.jquery.com/jquery-${JQUERY_VERSION}.min.js`;
+        const IMAGE_URL = `http://${WebserverURL}:${WebserverPORT}${WebserverPath}images/rotor.png`;
 
-        let ctx; // Canvas context
-        let x, y; // Center coordinates of the canvas
+        let ctx;
+        let x, y;
         const radius = 23;
         let lineAngle = 26;
         const lineLength = 67;
-        let canvas; // Canvas element
-        let tooltip; // Tooltip element
-        let ws; // WebSocket instance
+        let canvas;
+        let tooltip;
+        let ws;
 
         // Function to fetch the client's IP address
         async function fetchIpAddress() {
@@ -170,6 +153,15 @@ function loadPSTRotator() {
                 isTuneAuthenticated = true;
             }
         }
+		
+// Function to update the follow button appearance based on `follow`
+function updateFollowButtonState() {
+  const btn = document.getElementById('ES-FOLLOW-on-off');
+  if (!btn) return;
+  btn.classList.toggle('active', follow);
+}
+
+
 
         const PSTRotatorPlugin = (() => {
             // Add CSS styles
@@ -453,36 +445,43 @@ function loadPSTRotator() {
                 return color || '#FFFFFF'; // Fallback color
             }
 
-            // Function to send data via WebSocket
-            function sendPosition(position) {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    const message = JSON.stringify({
-                        type: 'Rotor',
-                        value: position.toString(),
-						lock: isLockAuthenticated,
-                        source: ipAddress
-                    });
-                    ws.send(message);
-                    console.log('Sent position:', message);
-                } else {
-                    console.error('WebSocket is not open. Unable to send position.');
-                }
+// Function to update the Follow button's state
+        function updateFollowButtonState () {
+            const btn = document.getElementById('ES-FOLLOW-on-off');
+            if (!btn) return;
+            btn.classList.toggle('active', follow);
+        }
+
+        // Function to send data via WebSocket
+        function sendPosition(position) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = JSON.stringify({
+                    type: 'Rotor',
+                    value: position.toString(),
+                    lock: isLockAuthenticated,
+                    source: ipAddress
+                });
+                ws.send(message);
+                console.log('Sent position:', message);
+            } else {
+                console.error('WebSocket is not open. Unable to send position.');
             }
+        }
 			
-			// Function to send data via WebSocket
-            function sendLockStatus() {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    const message = JSON.stringify({
-                        type: 'Rotor',
-						lock: isLockAuthenticated,
-                        source: ipAddress
-                    });
-                    ws.send(message);
-                    console.log('Sent lock status:', message);
-                } else {
-                    console.error('WebSocket is not open. Unable to send position.');
-                }
+        // Function to send data via WebSocket
+        function sendLockStatus() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = JSON.stringify({
+                    type: 'Rotor',
+                    lock: isLockAuthenticated,
+                    source: ipAddress
+                });
+                ws.send(message);
+                console.log('Sent lock status:', message);
+            } else {
+                console.error('WebSocket is not open. Unable to send position.');
             }
+        }
 
             // Function to handle click on the canvas
             function handleCanvasClick(event) {
@@ -597,53 +596,46 @@ function loadPSTRotator() {
                     console.log('Sent:', requestPayload);
                 };
 
-ws.onmessage = (event) => {
-    try {
-        const data = JSON.parse(event.data); // Parse the JSON data
+       // Function to handle WebSocket messages
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
 
-        // Only process messages where type is "Rotor"
-        if (data.type === 'Rotor') {
-            // Skip messages from the own IP address
-            if (data.source === ipAddress) {
-                return;
+                if (data.type === 'Rotor') {
+            // Skip messages von dir selbst
+            if (data.source === ipAddress) return;
+
+            // Handle Follow-Status **immer**, nicht nur bei Änderung
+            if (typeof data.follow === 'boolean') {
+                follow = data.follow;
+                updateFollowButtonState();      // Klasse aktiv/inaktiv immer neu setzen
             }
 
-            console.log('Received:', data);
+                    const position = parseFloat(data.value);
+                    const lock = data.lock;
 
-            // data_pluginsct position and lock from JSON data
-            const position = parseFloat(data.value);
-            const lock = data.lock;
+                    if (lock !== undefined && lock !== isLockAuthenticated) {
+                        isLockAuthenticated = lock;
+                        updateLockButtonState();
+                        console.log(`Lock state updated to: ${isLockAuthenticated}`);
+                    }
 
-            // Check if lock status is received and differs from current status
-            if (lock !== undefined && lock !== isLockAuthenticated) {
-				console.log(lock);
-                isLockAuthenticated = lock; // Update isLockAuthenticated
-                updateLockButtonState(); // Update the lock button UI based on the new state
-                console.log(`Lock state updated to: ${isLockAuthenticated}`);
+                    if (isNaN(position)) {
+                        console.error('Received position is not a valid number:', data.value);
+                        return;
+                    }
+
+                    if (position >= 0 && position <= 360) {
+                        lineAngle = position - 90;
+                        drawCircleAndLines();
+                    } else {
+                        console.warn('Received position is out of range:', position);
+                    }
+                }
+            } catch (error) {
+                console.error('Error processing WebSocket message:', error);
             }
-
-            // Check if position is a valid number
-            if (isNaN(position)) {
-                console.error('Received position is not a valid number:', data.value);
-                return; // Abort processing
-            }
-
-            // Check if position is within valid range
-            if (position >= 0 && position <= 360) {
-                lineAngle = position - 90;
-                drawCircleAndLines();
-            } else {
-                console.warn('Received position is out of range:', position);
-            }
-        }
-        // All other messages are ignored
-    } catch (error) {
-        console.error('Error processing WebSocket message:', error);
-    }
-};
-
-
-
+        };
                 ws.onerror = (error) => {
                     console.error('WebSocket error:', error);
                 };
@@ -746,7 +738,100 @@ function updateLockButtonState() {
 			}
 		}, 200);	
 		
-    }, 500); // End of the setTimeout function with a 500 ms delay
-				
+
+// New function for sending the follow status via WebSocket
+function sendFollow(isFollowing) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        const message = JSON.stringify({
+            type: 'Rotor',
+            follow: isFollowing,
+            source: ipAddress
+        });
+        ws.send(message);
+        console.log('Sent follow status:', message);
+    } else {
+        console.error('WebSocket is not open. Unable to send follow command');
+    }
+}
+
+(function createFollowToggle(id) {
+    const obs = new MutationObserver(() => {
+        if (typeof addIconToPluginPanel === 'function') {
+            obs.disconnect();
+            addIconToPluginPanel(id, FOLLOW_PLUGIN_NAME, 'solid', 'eye', 'Toggle on/off Rotor follow ES-Alert');
+
+            const btnObs = new MutationObserver(() => {
+                const $btn = $(`#${id}`);
+                if (!$btn.length) return;
+                btnObs.disconnect();
+
+                $btn.addClass('hide-phone bg-color-2');
+
+                // Initialisierung: Deaktiviere Follow, wenn nicht berechtigt
+                if (follow && !isAdminLoggedIn && !isTuneLoggedIn) {
+                    follow = false;
+                }
+                if (follow) {
+                    $btn.addClass('active');
+                    sendFollow(true);
+                }
+                updateFollowButtonState();
+
+                let longPress = false, timer;
+                $btn.on('mousedown', () => {
+                    longPress = false;
+                    timer = setTimeout(() => {
+                        longPress = true;
+                        if (typeof openAzimuthMap === 'function') {
+                            openAzimuthMap();
+                        }
+                    }, 300);
+                });
+
+                $btn.on('mouseup', () => {
+                clearTimeout(timer);
+                if (longPress) return;
+
+                // Nur Admin oder Tune darf togglen
+                if (!isAdminLoggedIn && !isTuneLoggedIn) {
+                    sendToast(
+                        'warning',
+                        FOLLOW_PLUGIN_NAME,
+                        'Du musst als Admin oder Tune angemeldet sein!',
+                        false,
+                        false
+                    );
+                    return;
+                }
+
+                // Nur Follow-Status senden, UI-Update kommt exklusiv über WebSocket
+                follow = !follow;
+                if (follow) {
+                    sendFollow(true);
+                } else {
+                    sendFollow(false);
+                }
+                });
+
+                $btn.on('mouseleave', () => clearTimeout(timer));
+            });
+
+            btnObs.observe(document.body, { childList: true, subtree: true });
+        }
+    });
+
+    obs.observe(document.body, { childList: true, subtree: true });
+
+    // CSS für Hover und Aktiv‑Zustand
+    $('<style>').prop('type', 'text/css').html(`
+        #${id}:hover { color: var(--color-5); filter: brightness(120%); }
+        #${id}.active { background-color: var(--color-2) !important; filter: brightness(120%); }
+    `).appendTo('head');
+})('ES-FOLLOW-on-off');
+
+		
+    }, 500); // End of the setTimeout function with a 500 ms delay	
+
 	}
+
 })();
