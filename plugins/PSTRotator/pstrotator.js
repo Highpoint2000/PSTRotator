@@ -9,10 +9,10 @@
 ///                                                             ///
 ///////////////////////////////////////////////////////////////////
 
-const RotorLimitLineLength = 67;      // automatisch via Config aktualisiert
-const RotorLimitLineAngle  = 129;     // automatisch via Config aktualisiert
-const RotorLimitLineColor  = '#808080';// automatisch via Config aktualisiert
-const updateInfo           = true;    // Version Check an/aus
+const RotorLimitLineLength = 67;      	// automatisch via Config aktualisiert
+const RotorLimitLineAngle  = 129;     	// automatisch via Config aktualisiert
+const RotorLimitLineColor  = '#808080';	// automatisch via Config aktualisiert
+const updateInfo           = true;    	// Version Check an/aus
 
 const plugin_version       = '2.4';
 const plugin_path          = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
@@ -49,7 +49,7 @@ function loadPSTRotator() {
             fetch(`${plugin_path}${plugin_JSfile}`)
                 .then(response => response.text())
                 .then(script => {
-                    const pluginVersionMatch = script.match(/const plugin_version = '([\d.]+[a-z]*)?';/);
+                    const pluginVersionMatch = script.match(/const\s+plugin_version\s*=\s*['"]([\d.]+[a-z]*)['"]\s*;/);
                     if (!pluginVersionMatch) {
                         console.error(`${plugin_name}: Plugin version could not be found`);
                         return;
