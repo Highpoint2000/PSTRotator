@@ -4,10 +4,10 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ![image](https://github.com/user-attachments/assets/3254a114-8c31-4fff-9ef0-bbfce0e335a4)
 
-## Version 2.3e
+## Version 2.4
 
-- Minor adjustment for mobile design
-- Audio issue fixed
+- ES alarms can automatically control the rotor
+- Lock mode has been revised
 
 ## Installation notes:
 
@@ -34,14 +34,25 @@ The following variables can be changed in the configPlugin.json:
 	lockStartTime: '',                      // Start time for locking in HH:MM format (empty means no locking / 00:00 = 24h lock)
     lockEndTime: ''                         // End time for locking in HH:MM format (empty means no locking) / 00:00 = 24h lock)
 
+	/// ES FOLLOW OPTIONS ///
+
+	ESfollowOnStart: false,					   // Set true or false for automatic start ES follow mode
+	LAST_ALERT_MINUTES: 15,			   	       // Enter the time in minutes for processing the last message when starts the server (default is 15)
+	FMLIST_OMID:''							   // Set your OMID to use the ES follow mode
+
 ## Notes: 
 
-To use the plugin effectively, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/), which provides a web server. Admins can move the rotor by clicking on the degree ring or in the middle (manual input). The control can also be released to visitors using the on/off lock.
-A gray line that marks the rotor limit can also be defined in the header of the client script. If you don't want this, set the variable to 0.
+To use the plugin effectively, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/), which provides a web server. Admins can move the rotor by clicking on the degree ring or in the middle (manual input). A gray line that marks the rotor limit can also be defined in the header of the client script. If you don't want this, set the variable to 0.  The control can also be released to visitors using the on/off lock. Using the variables lockStartTime and lockEndTime, the use of the rotor can be locked and unlocked in a time-controlled manner. To using the ES Follow Mode, you must enable ES email notifications in FMLIST. You must also enter your OMID in the plugin's configuration settings. After activating the plugin as an admin using the ES Follow button, it checks every minute for notifications for the location and automatically aligns the rotor to the received azimuth value.
+
 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
 ## History:
+
+### Version 2.3e
+
+- Minor adjustment for mobile design
+- Audio issue fixed
 
 ### Version 2.3d
 
