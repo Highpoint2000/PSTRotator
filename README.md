@@ -37,9 +37,9 @@ The following variables can be changed in the configPlugin.json:
 
 	/// ES FOLLOW OPTIONS ///
 
-	ESfollowOnStart: false,					   // Set true or false for automatic start ES follow mode
-	LAST_ALERT_MINUTES: 15,			   	       // Enter the time in minutes for processing the last message when starts the server (default is 15)
-	FMLIST_OMID:''							   // Set your OMID to use the ES follow mode
+	ESfollowOnStart: false,		// Set true or false for automatic start ES follow mode
+	LAST_ALERT_MINUTES: 15,		// Enter the time in minutes for processing the last message when starts the server (default is 15)
+	FMLIST_OMID:''			// Set your OMID to use the ES follow mode
 
 ## Notes: 
 
