@@ -1,8 +1,10 @@
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.3e)         //
+//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4)          //
 //                                                                //
-//  by Highpoint                          last update: 25.03.25   //
+//                                                                //
+//                                                                //
+//  by Highpoint                          last update: 22.04.25   //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
@@ -63,14 +65,17 @@ const newConfigFilePath = path.join(__dirname, './../../plugins_configs/pstrotat
  * Save your configuration in pstrotator.json, which is automatically created on first run.
  */
 const defaultConfig = {
-    PSTRotatorUrl: 'http://127.0.0.1:80',       // Base URL for the PST Rotator software
+    PSTRotatorUrl: 'http://127.0.0.1:80',      // Base URL for the PST Rotator software
     port: 3000,                                // Port for the internal CORS Proxy (default: 3000)
     RotorLimitLineLength: 0,                   // Set the length of the line (default: 67, none: 0)
     RotorLimitLineAngle: 129,                  // Set the angle of the line (e.g., 180)
     RotorLimitLineColor: '#808080',            // Set the color for the additional line (default: #808080)
     lockStartTime: '',                         // Start time for locking in HH:MM format (empty => no locking / 00:00 => 24h lock)
-    lockEndTime: ''                            // End time for locking in HH:MM format (empty => no locking / 00:00 => 24h lock)
-};
+    lockEndTime: '',                           // End time for locking in HH:MM format (empty => no locking / 00:00 => 24h lock)
+	ESfollowOnStart: false,					   // Set true or false for automatic start ES follow mode
+	LAST_ALERT_MINUTES: 15,			   	       // Enter the time in minutes for processing the last message when starts the server (default is 15)
+	FMLIST_OMID:''							   // Set your OMID to use the ES follow mode
+	};
 
 /**
  * Merges default configuration with an existing configuration, removing undefined values.
@@ -159,14 +164,28 @@ const RotorLimitLineAngle = configPlugin.RotorLimitLineAngle;
 const RotorLimitLineColor = configPlugin.RotorLimitLineColor;
 const lockStartTime = configPlugin.lockStartTime;
 const lockEndTime = configPlugin.lockEndTime;
+const ESfollowOnStart = configPlugin.ESfollowOnStart;
+const LAST_ALERT_MINUTES = configPlugin.LAST_ALERT_MINUTES;
+const FMLIST_OMID = configPlugin.FMLIST_OMID;
 
 // Initialize OnlyViewModus based on time-controlled locking
 let OnlyViewModus = false; // Default value; will be set by the time lock function
 let LockValue = true;      // Initial declaration
 let lock = true;
+let follow = false;
 
+if (ESfollowOnStart && FMLIST_OMID !== '') {
+	LockValue = true; 
+	OnlyViewModus = true;
+	follow = true;
+	logInfo('Rotor set ES follow mode true');
+}
+	
 // Global variable for throttling: Only one message is processed within 500 ms
 let lastMessageTimestamp = 0;
+let lastMessageTimestampTurning = 0;
+let lastEsTimestamp = 0;
+let esFollowIntervalId = null;
 
 // Path to the target JavaScript file
 const PSTrotatorClientFile = path.join(__dirname, 'pstrotator.js');
@@ -346,11 +365,6 @@ function initializeWebSockets() {
         ws.on('message', message => {
             // Throttling: If a message was processed within the last 500 ms, ignore this one
             const now = Date.now();
-            if (now - lastMessageTimestamp < 500) {
-                logInfo('Incoming WebSocket message throttled (less than 500 ms since the last processed).');
-                return;
-            }
-            lastMessageTimestamp = now;
 
             try {
                 const messageObject = JSON.parse(message);
@@ -367,17 +381,25 @@ function initializeWebSockets() {
                     // If OnlyViewModus is active, LockValue is always true (locked)
                     if (OnlyViewModus) {
                         LockValue = true;
-                    }
+                    } else {
+						LockValue = false;
+					}
 
                     const responseMessage = JSON.stringify({
                         type: 'Rotor',
                         value: lastBearingValue || 'No bearing data available',
                         lock: LockValue,
+						follow: follow,
                         source: clientIp
                     });
                     ws.send(responseMessage);
-                    logInfo('Rotor responded with the last bearing value');
-
+					
+					const now = Date.now();
+					if (now - lastMessageTimestamp < 100) {
+						logInfo('Rotor responded with the last bearing value');
+					}
+					lastMessageTimestamp = now;
+						
                 // If we receive a "Rotor" type with a new bearing value from a source other than 127.0.0.1, we update PST Rotator
                 } else if (
                     messageObject.type === 'Rotor' &&
@@ -410,7 +432,7 @@ function initializeWebSockets() {
             logError('WebSocket error: ' + error);
         });
     });
-
+	
     // Create a WebSocket client for sending data to the external server
     externalWs = new WebSocket(externalWsUrl);
 
@@ -420,33 +442,40 @@ function initializeWebSockets() {
 
     externalWs.on('message', message => {
         // Throttling: If a message was processed within the last 500 ms, ignore this one
-        const now = Date.now();
-        if (now - lastMessageTimestamp < 500) {
-            // logInfo('Incoming external WebSocket message throttled (less than 500 ms).');
-            return;
-        }
-        lastMessageTimestamp = now;
 
         try {
             const messageObject = JSON.parse(message);
 
             // Detect a pure "request" message
             if (messageObject.type === 'Rotor' && messageObject.value === 'request' && messageObject.source !== '127.0.0.1') {
-                logInfo(`Rotor request from ${messageObject.source}`);
+				let now = Date.now();
+				if (now - lastMessageTimestamp < 500) {
+					                logInfo(`Rotor request from ${messageObject.source}`);
+				}
+				lastMessageTimestamp = now;		
 
                 // If OnlyViewModus is active, LockValue remains true (locked)
                 if (OnlyViewModus) {
                     LockValue = true;
+                } else {
+                    LockValue = false;
                 }
-
+			
                 const responseMessage = JSON.stringify({
                     type: 'Rotor',
                     value: lastBearingValue || 'No bearing data available',
                     lock: LockValue,
+					follow: follow,
                     source: clientIp
                 });
                 externalWs.send(responseMessage);
-                logInfo(`Rotor responded with ${lastBearingValue}° and lock ${LockValue}`);
+				
+				now = Date.now();
+				if (now - lastMessageTimestamp < 500) {
+					logInfo(`Rotor responded with ${lastBearingValue}°, lock ${LockValue} and ES follow ${follow}`);
+				}
+				lastMessageTimestamp = now;
+				
 
             // Detect a message that is not a "request"
             } else if (
@@ -456,32 +485,67 @@ function initializeWebSockets() {
             ) {
 
                 // Check if only lock status is being requested
-                if (!messageObject.value) {
-                    logInfo(`Rotor received lock request: ${messageObject.lock} from ${messageObject.source}`);
+				if ((messageObject.follow === true || messageObject.follow === false) && FMLIST_OMID !== '') {
+					
+					let now = Date.now();
+					if (now - lastMessageTimestamp < 500) {
+						logInfo(`Rotor received follow request: ${messageObject.follow} from ${messageObject.source}`);
+					}
+					
+					setFollowMode(messageObject.follow);			
+				
+                    const responseMessage = JSON.stringify({
+                        type: 'Rotor',
+                        value: lastBearingValue || 'No bearing data available',
+						follow: follow,
+                        source: '127.0.0.1'
+                    });
+                    
+                    externalWs.send(responseMessage);
+							
+					if (now - lastMessageTimestamp < 500) {
+						logInfo(`Rotor responded with ${lastBearingValue}° and ES follow ${follow}`);
+					}
+					lastMessageTimestamp = now;
+					
+				} else if ((messageObject.lock === true || messageObject.lock === false) && !messageObject.value) {
+					let now = Date.now();
+					if (now - lastMessageTimestamp < 500) {
+						logInfo(`Rotor received lock request: ${messageObject.lock} from ${messageObject.source}`);
+					}
 
-                    // If OnlyViewModus is active, LockValue remains true (locked)
-                    if (OnlyViewModus) {
-                        LockValue = true;
-                    } else {
-                        LockValue = messageObject.lock;
-                    }
-
+                    LockValue = messageObject.lock;
+ 					
+					if (LockValue) {
+						OnlyViewModus = true;
+					}
+					
                     const responseMessage = JSON.stringify({
                         type: 'Rotor',
                         value: lastBearingValue || 'No bearing data available',
                         lock: LockValue,
-                        source: clientIp
+                        source: '127.0.0.1'
                     });
                     
                     externalWs.send(responseMessage);
-                    logInfo(`Rotor responded with ${lastBearingValue}° and lock ${LockValue}`);
+					
+					if (now - lastMessageTimestamp < 500) {
+						logInfo(`Rotor responded with ${lastBearingValue}° and lock ${LockValue}`);
+					}
+					lastMessageTimestamp = now;
 
                 // We have a specified angle (bearing)
-                } else {
+                } else {		
+					if (messageObject.lock === false) {
+						OnlyViewModus = false;
+					}
                     // Check if LockValue is true (if LockValue = true => rotation allowed)
                     if (LockValue) {
-                        logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
-
+						let now = Date.now();
+						if (now - lastMessageTimestamp < 500) {
+						    logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
+						}
+						
                         // Path to the log file
                         const fs = require('fs');
                         const path = require('path');
@@ -500,7 +564,10 @@ function initializeWebSockets() {
 
 								// Log separate messages depending on whether admin status was confirmed
 								if (found && LockValue) {
-									logInfo("Rotor confirms admin status!");
+									if (now - lastMessageTimestamp < 500) {
+										logInfo("Rotor confirms admin status!");
+									}
+									lastMessageTimestamp = now;
 									// Update PST Rotator
 									updatePstRotator(messageObject.value);
 								} else {
@@ -584,7 +651,7 @@ async function fetchAndProcessData() {
 
         // Broadcast the new bearing value if it has changed
         if (bearingValue !== lastBearingValue) {
-            const message = JSON.stringify({ type: 'Rotor', value: bearingValue, source: clientIp });
+            const message = JSON.stringify({ type: 'Rotor', value: bearingValue, follow: follow, source: clientIp });
 
             if (externalWs && externalWs.readyState === WebSocket.OPEN) {
                 externalWs.send(message);
@@ -619,7 +686,12 @@ async function updatePstRotator(value) {
         });
 
         if (response.ok) {
-            logInfo(`Rotor is turning to ${value}°`);
+			let now = Date.now();
+			if ((now - lastMessageTimestampTurning < 500) && (value !== undefined)) {
+			   logInfo(`Rotor is turning to ${value}°`);
+			}
+			lastMessageTimestampTurning = now;			
+
         } else {
             logError(`Rotor: form submission failed. Status: ${response.status}`);
         }
@@ -631,59 +703,203 @@ async function updatePstRotator(value) {
 // === Time-Controlled Locking Functionality === //
 
 /**
- * Checks the current time against lockStartTime and lockEndTime
- * to set OnlyViewModus accordingly.
- * If either lockStartTime or lockEndTime is empty, OnlyViewModus is set to false.
+ * Checks the current time against lockStartTime and lockEndTime,
+ * updates OnlyViewModus and LockValue accordingly,
+ * logs the new state, and broadcasts it via WebSocket.
+ *
+ * @param {boolean} forceBroadcast – if true, always send an update
+ *                                   even if the lock state hasn’t changed
  */
-function checkAndUpdateLock() {
-    // If either lockStartTime or lockEndTime is not set, disable locking
-    if (!lockStartTime || !lockEndTime) {
-        if (OnlyViewModus !== false) {
-            OnlyViewModus = false;
-            LockValue = false; // Ensure LockValue reflects OnlyViewModus
-            logInfo(`OnlyViewModus set to false because lockStartTime or lockEndTime is not set.`);
-        }
-        return;
+function checkAndUpdateLock(forceBroadcast = false) {
+  // If either lock time is unset, disable locking entirely
+  if (!lockStartTime || !lockEndTime) {
+    if (OnlyViewModus !== false) {
+      OnlyViewModus = false;
+      LockValue = false;
+      logInfo('OnlyViewModus disabled because lockStartTime or lockEndTime is not set.');
+      // Broadcast even if nothing changed, if forced
+      if (forceBroadcast) {
+        broadcastLockState();
+      }
     }
+    return;
+  }
 
-    const now = new Date();
-    const currentTimeMinutes = now.getHours() * 60 + now.getMinutes(); // Current time in minutes since midnight
+  // Parse current time in minutes since midnight
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    const [startHour, startMinute] = lockStartTime.split(':').map(Number);
-    const [endHour, endMinute] = lockEndTime.split(':').map(Number);
+  // Parse start and end times
+  const [startH, startM] = lockStartTime.split(':').map(Number);
+  const [endH, endM]   = lockEndTime.split(':').map(Number);
 
-    // Validate the time components
-    if (
-        isNaN(startHour) || isNaN(startMinute) ||
-        isNaN(endHour) || isNaN(endMinute) ||
-        startHour < 0 || startHour > 23 ||
-        endHour < 0 || endHour > 23 ||
-        startMinute < 0 || startMinute > 59 ||
-        endMinute < 0 || endMinute > 59
-    ) {
-        logError('Invalid lockStartTime or lockEndTime format. OnlyViewModus set to false.');
-        OnlyViewModus = false;
-        LockValue = false;
-        return;
+  // Validate time format
+  if (
+    [startH, startM, endH, endM].some(n => isNaN(n)) ||
+    startH < 0 || startH > 23 || endH < 0 || endH > 23 ||
+    startM < 0 || startM > 59 || endM < 0 || endM > 59
+  ) {
+    logError('Invalid lockStartTime or lockEndTime format. Disabling lock.');
+    OnlyViewModus = false;
+    LockValue     = false;
+    if (forceBroadcast) {
+      broadcastLockState();
     }
+    return;
+  }
 
-    const startTimeMinutes = startHour * 60 + startMinute;
-    const endTimeMinutes = endHour * 60 + endMinute;
+  const startMinutes = startH * 60 + startM;
+  const endMinutes   = endH   * 60 + endM;
 
-    let shouldLock;
+  // Determine if we should be in locked mode
+  let shouldLock;
+  if (startMinutes < endMinutes) {
+    // Range does not cross midnight
+    shouldLock = currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  } else {
+    // Range crosses midnight
+    shouldLock = currentMinutes >= startMinutes || currentMinutes < endMinutes;
+  }
 
-    if (startTimeMinutes < endTimeMinutes) {
-        // Time range does not cross midnight
-        shouldLock = currentTimeMinutes >= startTimeMinutes && currentTimeMinutes < endTimeMinutes;
-    } else {
-        // Time range crosses midnight
-        shouldLock = currentTimeMinutes >= startTimeMinutes || currentTimeMinutes < endTimeMinutes;
-    }
+  const prevMode = OnlyViewModus;
+  OnlyViewModus = shouldLock;
+  LockValue     = OnlyViewModus;
 
-    if (shouldLock !== OnlyViewModus) {
-        OnlyViewModus = shouldLock;
-        LockValue = OnlyViewModus; // Update LockValue to match OnlyViewModus
-
-        logInfo(`OnlyViewModus set to ${OnlyViewModus} based on current time (${now.toLocaleTimeString()}).`);
-    }
+  // If state changed or a forced broadcast is requested
+  if (forceBroadcast || prevMode !== OnlyViewModus) {
+    logInfo(`OnlyViewModus is now ${OnlyViewModus} (current time: ${now.toLocaleTimeString()}).`);
+    broadcastLockState();
+  }
 }
+
+/**
+ * Sends the current lock state to all connected WebSocket clients
+ * and to the external WebSocket server.
+ */
+function broadcastLockState() {
+  const message = JSON.stringify({
+    type:   'Rotor',
+    lock:   LockValue,
+    source: clientIp
+  });
+
+  // 1) Broadcast to internal clients
+  if (typeof wss !== 'undefined') {
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+
+  // 2) Send to external WebSocket server
+  if (externalWs && externalWs.readyState === WebSocket.OPEN) {
+    externalWs.send(message);
+  }
+}
+
+/**
+ * Starts ES Follow polling if not already running.
+ */
+function startESFollow() {
+  if (esFollowIntervalId === null && FMLIST_OMID) {
+    fetchESAzimuth();  // immediate fetch
+    esFollowIntervalId = setInterval(fetchESAzimuth, 60 * 1000);
+    logInfo('ES Follow timer started');
+  }
+}
+
+/**
+ * Stops ES Follow polling if running.
+ */
+function stopESFollow() {
+  if (esFollowIntervalId !== null) {
+    clearInterval(esFollowIntervalId);
+    esFollowIntervalId = null;
+    logInfo('ES Follow timer stopped');
+  }
+}
+
+// === Helper to toggle follow mode consistently ===
+function setFollowMode(enabled) {
+  follow = enabled;
+  if (follow) startESFollow();
+  else       stopESFollow();
+}
+
+// Initial toggle based on configuration
+setFollowMode(!!ESfollowOnStart);
+
+/**
+ * Fetches ES alert data, logs all azimuths, and moves rotor to their average.
+ * Only processes fresh alerts (≤ LAST_ALERT_MINUTES) and each alert once.
+ */
+async function fetchESAzimuth() {
+  if (!follow || !FMLIST_OMID) return;
+
+  const url = `https://www.fmlist.org/esapi/es${FMLIST_OMID}.json?cb=${Date.now()}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      logError(`ES Follow: HTTP ${res.status} when fetching OMID ${FMLIST_OMID}`);
+      return;
+    }
+
+    const { esalert = {} } = await res.json();
+    const tsString = esalert.esdatetime;
+    if (!tsString) {
+      logError(`ES Follow: No timestamp in response for OMID ${FMLIST_OMID}`);
+      return;
+    }
+
+    const ts = Date.parse(tsString);
+    if (isNaN(ts)) {
+      logError(`ES Follow: Invalid timestamp "${tsString}" for OMID ${FMLIST_OMID}`);
+      return;
+    }
+
+    const ageMin = (Date.now() - ts) / 60000;
+    if (ageMin > LAST_ALERT_MINUTES) {
+      // logInfo(`ES Follow: Last Alert older than ${LAST_ALERT_MINUTES} min - skipping`);
+      return;
+    }
+
+    // Only process alerts newer than the last processed
+    if (ts <= lastEsTimestamp) return;
+    lastEsTimestamp = ts;
+
+    let { directions = [] } = esalert;
+    if (typeof directions === 'string') {
+      directions = directions
+        .split(/[\s,]+/)
+        .map(x => Number(x.trim()))
+        .filter(n => !isNaN(n));
+    }
+	
+	// directions = [112, 166, 173, 188, 199];	// test values
+
+    if (directions.length > 0) {
+      // Log all received azimuth values
+      logInfo(`Rotor received ES value(s): ${directions.join('°, ')}°`);
+
+      // Compute average and round to nearest whole degree
+      const sum = directions.reduce((acc, v) => acc + v, 0);
+      const avg = Math.round(sum / directions.length);
+
+      // Command rotor to move to the average azimuth
+      updatePstRotator(avg);
+      logInfo(`Rotor moving to average ES azimuth: ${avg}°`);
+    }
+  } catch (err) {
+    logError(`ES Follow: Error fetching/parsing OMID ${FMLIST_OMID}: ${err.message}`);
+  }
+}
+
+
+
+
+
+
+
+
+
