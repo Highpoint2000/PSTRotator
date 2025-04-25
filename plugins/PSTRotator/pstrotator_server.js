@@ -1,10 +1,10 @@
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4)          //
+//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4a)         //
 //                                                                //
+//  by Highpoint                        last update: 25.04.25     //
 //                                                                //
-//                                                                //
-//  by Highpoint                          last update: 22.04.25   //
+//  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
@@ -350,110 +350,58 @@ const server = app.listen(port, () => {
 });
 
 /**
+ * Helper: Check if an administrator is logged in based on the source IP
+ */
+function isAdminLoggedIn(sourceIp, callback) {
+  const logFilePath = path.resolve(__dirname, '../../serverlog.txt');
+  const searchText  = `${sourceIp} logged in as an administrator.`;
+
+  fs.readFile(logFilePath, 'utf8', (err, data) => {
+    if (err) {
+      // If the file really doesn’t exist, just treat it as “no admin,” no error
+      if (err.code === 'ENOENT') {
+        return callback(null, false);
+      }
+
+      // Otherwise it’s a legit read error—log it and notify the caller
+      console.error('Error reading the log file:', err);
+      return callback(err, false);
+    }
+
+    // If we got here, the file was read successfully
+    const found = data.includes(searchText);
+    callback(null, found);
+  });
+}
+
+/**
  * Initializes WebSocket connections for both the incoming server and outgoing external WebSocket.
  */
 function initializeWebSockets() {
-    // Create a WebSocket server that uses the existing HTTP server
-    const wss = new WebSocket.Server({ server });
-    wss.binaryType = 'text'; // Set the type of received data to text
-
-    // Handle WebSocket connections on this server
-    wss.on('connection', ws => {
-        // logInfo('WebSocket connection established');
-
-        // Handle incoming messages from WebSocket clients
-        ws.on('message', message => {
-            // Throttling: If a message was processed within the last 500 ms, ignore this one
-            const now = Date.now();
-
-            try {
-                const messageObject = JSON.parse(message);
-                logInfo(`Parsed message: ${JSON.stringify(messageObject)}`);
-
-                if (!messageObject.source) {
-                    messageObject.source = clientIp;
-                }
-
-                // If we receive a "Rotor" type request with value "request", we send the current bearing and lock state
-                if (messageObject.type === 'Rotor' && messageObject.value === 'request') {
-                    logInfo('Received request for bearing value');
-
-                    // If OnlyViewModus is active, LockValue is always true (locked)
-                    if (OnlyViewModus) {
-                        LockValue = true;
-                    } else {
-						LockValue = false;
-					}
-
-                    const responseMessage = JSON.stringify({
-                        type: 'Rotor',
-                        value: lastBearingValue || 'No bearing data available',
-                        lock: LockValue,
-						follow: follow,
-                        source: clientIp
-                    });
-                    ws.send(responseMessage);
-					
-					const now = Date.now();
-					if (now - lastMessageTimestamp < 100) {
-						logInfo('Rotor responded with the last bearing value');
-					}
-					lastMessageTimestamp = now;
-						
-                // If we receive a "Rotor" type with a new bearing value from a source other than 127.0.0.1, we update PST Rotator
-                } else if (
-                    messageObject.type === 'Rotor' &&
-                    messageObject.value !== 'request' &&
-                    messageObject.source !== '127.0.0.1'
-                ) {
-                    logInfo('Received update for bearing value');
-                    updatePstRotator(messageObject.value);
-                } else {
-                    logInfo('Message type or value did not match the expected criteria');
-                }
-
-                // Broadcast the message to all connected clients except the sender
-                wss.clients.forEach(client => {
-                    if (client !== ws && client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify(messageObject));
-                    }
-                });
-
-            } catch (error) {
-                logError('Error processing WebSocket message: ' + error);
-            }
-        });
-
-        ws.on('close', () => {
-            logInfo('WebSocket connection closed');
-        });
-
-        ws.on('error', error => {
-            logError('WebSocket error: ' + error);
-        });
-    });
-	
+   
     // Create a WebSocket client for sending data to the external server
     externalWs = new WebSocket(externalWsUrl);
-
     externalWs.on('open', () => {
         logInfo(`Rotor connected to external WebSocket server at ${externalWsUrl}`);
     });
 
     externalWs.on('message', message => {
         // Throttling: If a message was processed within the last 500 ms, ignore this one
+		
+		let now = Date.now();
+		if (now - lastMessageTimestamp < 500) {
+			return;
+		}
+		lastMessageTimestamp = now;
 
         try {
             const messageObject = JSON.parse(message);
 
             // Detect a pure "request" message
             if (messageObject.type === 'Rotor' && messageObject.value === 'request' && messageObject.source !== '127.0.0.1') {
-				let now = Date.now();
-				if (now - lastMessageTimestamp < 500) {
-					                logInfo(`Rotor request from ${messageObject.source}`);
-				}
-				lastMessageTimestamp = now;		
-
+				
+				logInfo(`Rotor request from ${messageObject.source}`);
+				
                 // If OnlyViewModus is active, LockValue remains true (locked)
                 if (OnlyViewModus) {
                     LockValue = true;
@@ -470,12 +418,7 @@ function initializeWebSockets() {
                 });
                 externalWs.send(responseMessage);
 				
-				now = Date.now();
-				if (now - lastMessageTimestamp < 500) {
-					logInfo(`Rotor responded with ${lastBearingValue}°, lock ${LockValue} and ES follow ${follow}`);
-				}
-				lastMessageTimestamp = now;
-				
+				logInfo(`Rotor responded with ${lastBearingValue}°, lock ${LockValue} and ES follow ${follow}`);			
 
             // Detect a message that is not a "request"
             } else if (
@@ -487,11 +430,7 @@ function initializeWebSockets() {
                 // Check if only lock status is being requested
 				if ((messageObject.follow === true || messageObject.follow === false) && FMLIST_OMID !== '') {
 					
-					let now = Date.now();
-					if (now - lastMessageTimestamp < 500) {
-						logInfo(`Rotor received follow request: ${messageObject.follow} from ${messageObject.source}`);
-					}
-					
+					logInfo(`Rotor received follow request: ${messageObject.follow} from ${messageObject.source}`);
 					setFollowMode(messageObject.follow);			
 				
                     const responseMessage = JSON.stringify({
@@ -501,39 +440,41 @@ function initializeWebSockets() {
                         source: '127.0.0.1'
                     });
                     
-                    externalWs.send(responseMessage);
-							
-					if (now - lastMessageTimestamp < 500) {
-						logInfo(`Rotor responded with ${lastBearingValue}° and ES follow ${follow}`);
-					}
-					lastMessageTimestamp = now;
+                    externalWs.send(responseMessage);					
+					logInfo(`Rotor responded with ${lastBearingValue}° and ES follow ${follow}`);
 					
 				} else if ((messageObject.lock === true || messageObject.lock === false) && !messageObject.value) {
-					let now = Date.now();
-					if (now - lastMessageTimestamp < 500) {
-						logInfo(`Rotor received lock request: ${messageObject.lock} from ${messageObject.source}`);
-					}
-
-                    LockValue = messageObject.lock;
- 					
-					if (LockValue) {
-						OnlyViewModus = true;
-					}
 					
-                    const responseMessage = JSON.stringify({
-                        type: 'Rotor',
-                        value: lastBearingValue || 'No bearing data available',
-                        lock: LockValue,
-                        source: '127.0.0.1'
-                    });
+					logInfo(`Rotor received lock request: ${messageObject.lock} from ${messageObject.source}`);
+
+					// Use helper to verify admin status
+					isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
+						if (err) return;
+
+						if (isAdmin) {
+							//logInfo('Rotor confirms admin status!');						
+							LockValue = messageObject.lock;
+
+							if (LockValue) {
+								OnlyViewModus = true;
+							}
+
+							const responseMessage = JSON.stringify({
+								type: 'Rotor',
+								lock: LockValue,
+								source: '127.0.0.1'
+							});
                     
-                    externalWs.send(responseMessage);
-					
-					if (now - lastMessageTimestamp < 500) {
-						logInfo(`Rotor responded with ${lastBearingValue}° and lock ${LockValue}`);
-					}
-					lastMessageTimestamp = now;
+							externalWs.send(responseMessage);
+							logInfo(`Rotor responded with lock ${LockValue}`);
 
+						} else {
+							logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
+
+						}
+
+					});					
+				
                 // We have a specified angle (bearing)
                 } else {		
 					if (messageObject.lock === false) {
@@ -541,47 +482,43 @@ function initializeWebSockets() {
 					}
                     // Check if LockValue is true (if LockValue = true => rotation allowed)
                     if (LockValue) {
-						let now = Date.now();
-						if (now - lastMessageTimestamp < 500) {
-						    logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
-						}
+
+					    logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
 						
                         // Path to the log file
                         const fs = require('fs');
                         const path = require('path');
                         const logFilePath = path.join(__dirname, './../../serverlog.txt');
 
-                        // Build the text to search for — we expect that messageObject.source contains the IP
-                        const searchText = `${messageObject.source} logged in as an administrator.`;
+						// Use helper to verify admin status
+						isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
+						if (err) return;
 
-                        // Read the file asynchronously and check if the sender is logged in as admin in serverlog.txt
-                        fs.readFile(logFilePath, 'utf8', (err, data) => {
-							if (err) {
-								logError("Error reading the log file:", err);
-							} else {
-								// Check if the search text occurs in the file
-								const found = data.includes(searchText);
+						if (isAdmin) {
+							//logInfo('Rotor confirms admin status!');
+							updatePstRotator(messageObject.value);
+						} else {
+							logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
+						}
 
-								// Log separate messages depending on whether admin status was confirmed
-								if (found && LockValue) {
-									if (now - lastMessageTimestamp < 500) {
-										logInfo("Rotor confirms admin status!");
-									}
-									lastMessageTimestamp = now;
-									// Update PST Rotator
-									updatePstRotator(messageObject.value);
-								} else {
-									if (LockValue) {
-									   logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
-									}
-								}
-							}
-   						});
+						});
 
                     } else {
                         // If LockValue = false but OnlyViewModus = false => rotate anyway
                         if (!OnlyViewModus && !LockValue) {
-                            updatePstRotator(messageObject.value);
+							
+							// Use helper to verify admin status
+							isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
+								if (err) return;
+
+								if (isAdmin) {
+									//logInfo('Rotor confirms admin status!');
+									updatePstRotator(messageObject.value);
+								} else {
+									logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
+								}
+
+							});						
                         }
                     }
                 }
@@ -686,12 +623,7 @@ async function updatePstRotator(value) {
         });
 
         if (response.ok) {
-			let now = Date.now();
-			if ((now - lastMessageTimestampTurning < 500) && (value !== undefined)) {
-			   logInfo(`Rotor is turning to ${value}°`);
-			}
-			lastMessageTimestampTurning = now;			
-
+		   logInfo(`Rotor is turning to ${value}°`);
         } else {
             logError(`Rotor: form submission failed. Status: ${response.status}`);
         }
