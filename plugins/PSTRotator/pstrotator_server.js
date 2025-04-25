@@ -823,7 +823,7 @@ async function fetchESAzimuth() {
       logInfo(`Rotor moving to average ES azimuth: ${avg}°`);
     }
   } catch (err) {
-    logError(`ES Follow: Error fetching/parsing OMID ${FMLIST_OMID}: ${err.message}`);
+    //logError(`ES Follow: Error fetching/parsing OMID ${FMLIST_OMID}: ${err.message}`);
   }
 }
 
