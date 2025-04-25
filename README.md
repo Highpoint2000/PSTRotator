@@ -5,10 +5,9 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ![image](https://github.com/user-attachments/assets/d5f9bcdd-cb5e-4767-903e-e4d30c907e31)
 
 
-## Version 2.4
+## Version 2.4a
 
-- ES alarms can automatically control the rotor
-- Lock mode has been revised
+- Important security vulnerability for admin manipulation closed
 
 ## Installation notes:
 
@@ -50,6 +49,12 @@ Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logg
 
 <details>
    <summary>History</summary>
+
+### Version 2.4
+
+- ES alarms can automatically control the rotor
+- Lock mode has been revised
+
 
 ### Version 2.3e
 
