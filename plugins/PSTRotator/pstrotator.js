@@ -755,29 +755,42 @@ function sendFollow(isFollowing) {
 }
 
 (function createFollowToggle(id) {
+    // Observe the document for the plugin panel to become available
     const obs = new MutationObserver(() => {
         if (typeof addIconToPluginPanel === 'function') {
             obs.disconnect();
-            addIconToPluginPanel(id, FOLLOW_PLUGIN_NAME, 'solid', 'eye', 'Toggle on/off Rotor follow ES-Alert');
+            // Add the follow icon to the plugin panel
+            addIconToPluginPanel(
+                id,
+                FOLLOW_PLUGIN_NAME,
+                'solid',
+                'eye',
+                'Toggle Rotor follow ES-Alert on/off'
+            );
 
+            // Observe again for the button element to appear in the DOM
             const btnObs = new MutationObserver(() => {
                 const $btn = $(`#${id}`);
                 if (!$btn.length) return;
                 btnObs.disconnect();
 
+                // Apply base styling classes
                 $btn.addClass('hide-phone bg-color-2');
 
-                // Initialisierung: Deaktiviere Follow, wenn nicht berechtigt
+                // Initialization: disable follow mode if user is not authorized
                 if (follow && !isAdminLoggedIn && !isTuneLoggedIn) {
                     follow = false;
                 }
+                // If follow mode is active, mark the button and notify server
                 if (follow) {
                     $btn.addClass('active');
                     sendFollow(true);
                 }
                 updateFollowButtonState();
 
-                let longPress = false, timer;
+                let longPress = false,
+                    timer;
+                // Handle long-press to open the Azimuth map
                 $btn.on('mousedown', () => {
                     longPress = false;
                     timer = setTimeout(() => {
@@ -788,48 +801,57 @@ function sendFollow(isFollowing) {
                     }, 300);
                 });
 
+                // Handle click/tap to toggle follow mode
                 $btn.on('mouseup', () => {
-                clearTimeout(timer);
-                if (longPress) return;
+                    clearTimeout(timer);
+                    if (longPress) return;
 
-                // Nur Admin oder Tune darf togglen
-                if (!isAdminLoggedIn && !isTuneLoggedIn) {
-                    sendToast(
-                        'warning',
-                        FOLLOW_PLUGIN_NAME,
-                        'Du musst als Admin oder Tune angemeldet sein!',
-                        false,
-                        false
-                    );
-                    return;
-                }
+                    // Only Admin or Tune users may toggle follow mode
+                    if (!isAdminLoggedIn && !isTuneLoggedIn) {
+                        sendToast(
+                            'warning',
+                            FOLLOW_PLUGIN_NAME,
+                            'You must be logged in as an Admin or Tune user!',
+                            false,
+                            false
+                        );
+                        return;
+                    }
 
-                // Nur Follow-Status senden, UI-Update kommt exklusiv über WebSocket
-                follow = !follow;
-                if (follow) {
-                    sendFollow(true);
-                } else {
-                    sendFollow(false);
-                }
+                    // Toggle follow state and send the new status
+                    follow = !follow;
+                    sendFollow(follow);
                 });
 
+                // Cancel long-press timer if the pointer leaves the button
                 $btn.on('mouseleave', () => clearTimeout(timer));
             });
 
+            // Start observing for the button element
             btnObs.observe(document.body, { childList: true, subtree: true });
         }
     });
 
+    // Start observing for the plugin panel
     obs.observe(document.body, { childList: true, subtree: true });
 
-    // CSS für Hover und Aktiv‑Zustand
-    $('<style>').prop('type', 'text/css').html(`
-        #${id}:hover { color: var(--color-5); filter: brightness(120%); }
-        #${id}.active { background-color: var(--color-2) !important; filter: brightness(120%); }
-    `).appendTo('head');
+    // Inject CSS rules for hover and active states
+    $('<style>')
+        .prop('type', 'text/css')
+        .html(`
+            #${id}:hover { 
+                color: var(--color-5); 
+                filter: brightness(120%); 
+            }
+            #${id}.active { 
+                background-color: var(--color-2) !important; 
+                filter: brightness(120%); 
+            }
+        `)
+        .appendTo('head');
 })('ES-FOLLOW-on-off');
 
-		
+	
     }, 500); // End of the setTimeout function with a 500 ms delay	
 
 	}
