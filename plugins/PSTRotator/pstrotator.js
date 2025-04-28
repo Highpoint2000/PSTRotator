@@ -3,15 +3,15 @@
 //                                                                //
 //  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4a)         //
 //                                                                //
-//  by Highpoint                        last update: 25.04.25     //
+//  by Highpoint                        last update: 28.04.25     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
-const RotorLimitLineLength = 67;      	// automatisch via Config aktualisiert
-const RotorLimitLineAngle  = 129;     	// automatisch via Config aktualisiert
-const RotorLimitLineColor  = '#808080';	// automatisch via Config aktualisiert
+const RotorLimitLineLength = 67;      	// automatisch via Config aktualisiert  	
+const RotorLimitLineColor = '#808080'; 	// automatisch via Config aktualisiert
+const RotorLimitLineAngle = 129;		// automatisch via Config aktualisiert
 const updateInfo           = true;    	// Version Check an/aus
 
 const plugin_version       = '2.4a';
@@ -28,9 +28,8 @@ let isTuneLoggedIn;
 let isLockAuthenticated;
 let follow = false;  
 
-setTimeout(loadPSTRotator, 500);
+setTimeout(loadPSTRotator, 1500);
 function loadPSTRotator() {
-    setTimeout(() => {
         // Function to check if the notification was shown today
         function shouldShowNotification() {
             const lastNotificationDate = localStorage.getItem(PluginUpdateKey);
@@ -723,7 +722,7 @@ function updateLockButtonState() {
                 // Show the rotor after 300 ms
                 setTimeout(() => {
                     document.getElementById('containerRotator').classList.add('visible');
-                }, 300);
+                }, 500);
             }
 
             // Load jQuery and execute the main function
@@ -851,9 +850,6 @@ function sendFollow(isFollowing) {
         .appendTo('head');
 })('ES-FOLLOW-on-off');
 
-	
-    }, 500); // End of the setTimeout function with a 500 ms delay	
-
-	}
+}
 
 })();
