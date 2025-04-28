@@ -2,7 +2,7 @@
 //                                                                //
 //  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4a)         //
 //                                                                //
-//  by Highpoint                        last update: 25.04.25     //
+//  by Highpoint                        last update: 28.04.25     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -506,7 +506,8 @@ function initializeWebSockets() {
                     } else {
                         // If LockValue = false but OnlyViewModus = false => rotate anyway
                         if (!OnlyViewModus && !LockValue) {
-							
+							updatePstRotator(messageObject.value);												
+                        } else {
 							// Use helper to verify admin status
 							isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
 								if (err) return;
@@ -518,8 +519,8 @@ function initializeWebSockets() {
 									logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
 								}
 
-							});						
-                        }
+							});		
+						}
                     }
                 }
             }
