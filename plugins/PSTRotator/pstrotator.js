@@ -54,19 +54,16 @@ function checkUpdate(setupOnly, pluginName, urlUpdateLink, urlFetchLink) {
       }
       const text = await response.text();
 
-      // 1) const PLUGIN_VERSION = '2.1'
       let match = text.match(
         /const\s+PLUGIN_VERSION\s*=\s*['"]([^'"]+)['"]/i
       );
 
-      // 2) const pluginVersion = "2.1"
       if (!match) {
         match = text.match(
           /const\s+pluginVersion\s*=\s*['"]([^'"]+)['"]/i
         );
       }
 
-      // 3) const plugin_version = '2.1'
       if (!match) {
         match = text.match(
           /const\s+plugin_version\s*=\s*['"]([^'"]+)['"]/i
