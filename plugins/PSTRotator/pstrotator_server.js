@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4a)         //
+//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4b)         //
 //                                                                //
-//  by Highpoint                        last update: 28.04.25     //
+//  by Highpoint                        last update: 12.06.25     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -350,29 +350,45 @@ const server = app.listen(port, () => {
 });
 
 /**
- * Helper: Check if an administrator is logged in based on the source IP
+ * Checks whether the given source IP address appears in the server log
+ * as an administrator login. Supports both old and new formats by
+ * normalizing any "::ffff:" and doing a simple substring + regex check.
+ *
+ * @param {string} sourceIp   – e.g. "84.181.18.10" or "::ffff:84.181.18.10"
+ * @param {(err: Error|null, isAdmin: boolean) => void} callback
  */
 function isAdminLoggedIn(sourceIp, callback) {
   const logFilePath = path.resolve(__dirname, '../../serverlog.txt');
-  const searchText  = `${sourceIp} logged in as an administrator.`;
+
+  // Strip the IPv6-embedded prefix if present
+  const normalizeIp = ip => ip.replace(/^::ffff:/, '');
 
   fs.readFile(logFilePath, 'utf8', (err, data) => {
     if (err) {
-      // If the file really doesn’t exist, just treat it as “no admin,” no error
-      if (err.code === 'ENOENT') {
-        return callback(null, false);
-      }
-
-      // Otherwise it’s a legit read error—log it and notify the caller
-      console.error('Error reading the log file:', err);
+      // Missing file => no admin
+      if (err.code === 'ENOENT') return callback(null, false);
+      // Other I/O error
       return callback(err, false);
     }
 
-    // If we got here, the file was read successfully
-    const found = data.includes(searchText);
-    callback(null, found);
+    const targetIp = normalizeIp(sourceIp);
+    const lines = data.split(/\r?\n/);
+
+    for (let line of lines) {
+      // remove any ::ffff: prefixes in this line
+      const stripped = line.replace(/::ffff:/g, '');
+
+      // check for IP and the exact phrase (case-insensitive)
+      if (stripped.includes(targetIp) &&
+          /logged in as an administrator/i.test(stripped)) {
+        return callback(null, true);
+      }
+    }
+
+    callback(null, false);
   });
 }
+
 
 /**
  * Initializes WebSocket connections for both the incoming server and outgoing external WebSocket.

@@ -1,25 +1,25 @@
 (() => {
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4a)         //
+//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4b)         //
 //                                                                //
-//  by Highpoint                        last update: 28.04.25     //
+//  by Highpoint                        last update: 12.06.25     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
-const RotorLimitLineLength = 67;      	// automatisch via Config aktualisiert  	
-const RotorLimitLineColor = '#808080'; 	// automatisch via Config aktualisiert
-const RotorLimitLineAngle = 129;		// automatisch via Config aktualisiert
-const updateInfo           = true;    	// Version Check an/aus
+const RotorLimitLineLength  = 67;        	// automatisch via Config aktualisiert  	
+const RotorLimitLineColor   = '#808080'; 	// automatisch via Config aktualisiert
+const RotorLimitLineAngle   = 129;		    // automatisch via Config aktualisiert
+const pluginSetupOnlyNotify	= true;		
+const CHECK_FOR_UPDATES 	= true;
 
-const plugin_version       = '2.4a';
-const plugin_path          = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
-const plugin_JSfile        = 'main/plugins/PSTRotator/pstrotator.js';
-const plugin_name          = 'PST Rotator';
+const pluginVersion 	   = "2.4b";
+const pluginName 		   = "PST Rotator";
+const pluginHomepageUrl    = "https://github.com/Highpoint2000/PSTRotator/releases";
+const pluginUpdateUrl 	   = "https://raw.githubusercontent.com/highpoint2000/PSTRotator/main/plugins/PSTRotator/pstrotator.js" + "?_=" + new Date().getTime();
 
-const PluginUpdateKey      = `${plugin_name}_lastUpdateNotification`;
 const FOLLOW_PLUGIN_NAME   = 'ES Follow';
 
 let isTuneAuthenticated;
@@ -30,73 +30,107 @@ let follow = false;
 
 setTimeout(loadPSTRotator, 1500);
 function loadPSTRotator() {
-        // Function to check if the notification was shown today
-        function shouldShowNotification() {
-            const lastNotificationDate = localStorage.getItem(PluginUpdateKey);
-            const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
 
-            if (lastNotificationDate === today) {
-                return false; // Notification already shown today
-            }
-            // Update the date in localStorage to today
-            localStorage.setItem(PluginUpdateKey, today);
-            return true;
-        }
+/* =================================================================== *
+ *  Update Info                                                        *
+ * =================================================================== */
+  
+// Function for update notification in /setup
+function checkUpdate(setupOnly, pluginName, urlUpdateLink, urlFetchLink) {
+  if (setupOnly && window.location.pathname !== '/setup') return;
+  const pluginVersionCheck =
+    typeof pluginVersion !== 'undefined'
+      ? pluginVersion
+      : typeof PLUGIN_VERSION !== 'undefined'
+        ? PLUGIN_VERSION
+        : 'Unknown';
 
-        // Function to check plugin version
-        function checkPluginVersion() {
-            fetch(`${plugin_path}${plugin_JSfile}`)
-                .then(response => response.text())
-                .then(script => {
-                    const pluginVersionMatch = script.match(/const\s+plugin_version\s*=\s*['"]([\d.]+[a-z]*)['"]\s*;/);
-                    if (!pluginVersionMatch) {
-                        console.error(`${plugin_name}: Plugin version could not be found`);
-                        return;
-                    }
+  // Neue fetchFirstLine-Version:
+  async function fetchFirstLine() {
+    try {
+      const response = await fetch(urlFetchLink);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const text = await response.text();
 
-                    const externalPluginVersion = pluginVersionMatch[1];
+      // 1) const PLUGIN_VERSION = '2.1'
+      let match = text.match(
+        /const\s+PLUGIN_VERSION\s*=\s*['"]([^'"]+)['"]/i
+      );
 
-                    function compareVersions(local, remote) {
-                        const parseVersion = (version) =>
-                            version.split(/(\d+|[a-z]+)/i).filter(Boolean).map((part) => (isNaN(part) ? part : parseInt(part, 10)));
+      // 2) const pluginVersion = "2.1"
+      if (!match) {
+        match = text.match(
+          /const\s+pluginVersion\s*=\s*['"]([^'"]+)['"]/i
+        );
+      }
 
-                        const localParts = parseVersion(local);
-                        const remoteParts = parseVersion(remote);
+      // 3) const plugin_version = '2.1'
+      if (!match) {
+        match = text.match(
+          /const\s+plugin_version\s*=\s*['"]([^'"]+)['"]/i
+        );
+      }
 
-                        for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
-                            const localPart = localParts[i] || 0;
-                            const remotePart = remoteParts[i] || 0;
+      if (match) {
+        return match[1];
+      }
 
-                            if (typeof localPart === 'number' && typeof remotePart === 'number') {
-                                if (localPart > remotePart) return 1;
-                                if (localPart < remotePart) return -1;
-                            } else if (typeof localPart === 'string' && typeof remotePart === 'string') {
-                                if (localPart > remotePart) return 1;
-                                if (localPart < remotePart) return -1;
-                            } else {
-                                return typeof localPart === 'number' ? -1 : 1;
-                            }
-                        }
+      // Fallback: erste Zeile prüfen
+      const firstLine = text.split('\n')[0].trim();
+      return /^\d/.test(firstLine) ? firstLine : "Unknown";
+    } catch (error) {
+      console.error(`[${pluginName}] error fetching file:`, error);
+      return null;
+    }
+  }
 
-                        return 0;
-                    }
+  // Check for updates
+  fetchFirstLine().then(newVersion => {
+    if (newVersion && newVersion !== pluginVersionCheck) {
+      console.log(`[${pluginName}] There is a new version available: ${pluginVersionCheck} → ${newVersion}`);
+      setupNotify(pluginVersionCheck, newVersion, pluginName, urlUpdateLink);
+    }
+  });
 
-                    const comparisonResult = compareVersions(plugin_version, externalPluginVersion);
-                    if (comparisonResult === 1) {
-                        console.log(`${plugin_name}: The local version is newer than the plugin version.`);
-                    } else if (comparisonResult === -1) {
-                        if (shouldShowNotification()) {
-                            console.log(`${plugin_name}: Plugin update available: ${plugin_version} -> ${externalPluginVersion}`);
-                            sendToast('warning important', `${plugin_name}`, `Update available:<br>${plugin_version} -> ${externalPluginVersion}`, false, false);
-                        }
-                    } else {
-                        console.log(`${plugin_name}: The local version matches the plugin version.`);
-                    }
-                })
-                .catch(error => {
-                    console.error(`${plugin_name}: Error fetching the plugin script:`, error);
-                });
-        }
+  function setupNotify(current, remote, pluginName, urlUpdateLink) {
+    if (window.location.pathname !== '/setup') return;
+    const pluginSettings = document.getElementById('plugin-settings');
+    if (!pluginSettings) return;
+
+    const linkHTML = `<a href="${urlUpdateLink}" target="_blank">[${pluginName}] Update available: ${current} → ${remote}</a><br>`;
+    if (pluginSettings.textContent.trim() === 'No plugin settings are available.') {
+      pluginSettings.innerHTML = linkHTML;
+    } else {
+      pluginSettings.innerHTML += ' ' + linkHTML;
+    }
+
+    // roter Punkt im Menü
+    const updateIcon =
+      document.querySelector('.wrapper-outer #navigation .sidenav-content .fa-puzzle-piece')
+      || document.querySelector('.wrapper-outer .sidenav-content')
+      || document.querySelector('.sidenav-content');
+
+    if (updateIcon) {
+      const redDot = document.createElement('span');
+      redDot.style.cssText = `
+        display:block;
+        width:12px;
+        height:12px;
+        border-radius:50%;
+        background-color:#FE0830;
+        margin-left:82px;
+        margin-top:-12px;
+      `;
+      updateIcon.appendChild(redDot);
+    }
+  }
+}
+
+if (CHECK_FOR_UPDATES) {
+  checkUpdate(pluginSetupOnlyNotify, pluginName, pluginHomepageUrl, pluginUpdateUrl);
+}
 
         // Global variable to store the IP address
         let ipAddress;
@@ -126,17 +160,42 @@ function loadPSTRotator() {
         let tooltip;
         let ws;
 
-        // Function to fetch the client's IP address
-        async function fetchIpAddress() {
-            try {
-                const response = await fetch('https://api.ipify.org?format=json');
-                const data = await response.json();
-                return data.ip;
-            } catch (error) {
-                console.error('Failed to fetch IP address:', error);
-                return 'unknown'; // Fallback value
-            }
-        }
+// Function to fetch the client's IP address
+async function fetchIpAddress() {
+  const host = WebserverURL; 
+
+  // 1) If host is already a plain IPv4 address, return it directly
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(host)) {
+    return host;
+  }
+
+  // 2) Otherwise, resolve the domain via DNS-over-HTTPS (Google’s DNS API)
+  try {
+    const dnsRes = await fetch(`https://dns.google/resolve?name=${host}&type=A`);
+    const dnsJson = await dnsRes.json();
+    if (dnsJson.Answer && dnsJson.Answer.length) {
+      // Find the first A-record
+      const aRecord = dnsJson.Answer.find(r => r.type === 1);
+      if (aRecord && aRecord.data) {
+        return aRecord.data;  // e.g. "203.0.113.42"
+      }
+    }
+  } catch (e) {
+    console.warn('DNS resolution failed, will fall back:', e);
+  }
+
+  // 3) Optional fallback: get your public IP via ipify
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const json = await res.json();
+    return json.ip;
+  } catch (e) {
+    console.error('Public-IP lookup failed:', e);
+  }
+
+  // Final fallback if everything else failed
+  return host;
+}
 
         // Function to check if the user is logged in as an administrator
         function checkAdminMode() {
@@ -293,7 +352,6 @@ function updateFollowButtonState() {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    cursor: pointer;
                 }
 				/* Media Query for screens narrower than 768px */
                 @media (max-width: 768px) {
@@ -351,7 +409,7 @@ function updateFollowButtonState() {
 									<img src="${IMAGE_URL}" alt="Background Image">
 								</div>
 								<canvas id="CanvasRotator" width="200" height="200"></canvas>
-								<div id="innerCircle" title="Plugin Version: ${plugin_version}">
+								<div id="innerCircle" title="Plugin Version: ${pluginVersion}">
 									<div id="lockIcon" class="lock-closed"></div>
 								</div>
 								<div id="lockButton" class="locked"></div>
@@ -660,17 +718,6 @@ function updateFollowButtonState() {
                 });
             }
 
-function toggleAuthentication() {
-    if (isAdminLoggedIn) {
-        isLockAuthenticated = !isLockAuthenticated;
-        updateLockButtonState(); // Call the function to update lock button UI
-        sendLockStatus(); // Send the new lock status over WebSocket
-        console.log(`Lock state set to: ${isLockAuthenticated}`);
-    } else {
-        alert("You must be authenticated to use the PSTRotator feature.");
-    }
-}
-
 // Function to update the lock button state
 function updateLockButtonState() {
     const lockButton = document.getElementById('lockButton');
@@ -708,9 +755,6 @@ function updateLockButtonState() {
                 // Add click event listener to the inner circle
                 document.getElementById('innerCircle').addEventListener('click', handleInnerCircleClick);
 
-                // Add click event listener to the lock button
-                document.getElementById('lockButton').addEventListener('click', toggleAuthentication);
-
                 loadWebSocket(); // Load WebSocket
                 checkAdminMode(); // Check admin mode
 
@@ -730,14 +774,6 @@ function updateLockButtonState() {
 
         })();
 		
-		setTimeout(() => {
-		// Execute the plugin version check if updateInfo is true and admin ist logged on
-		if (updateInfo && isTuneAuthenticated) {
-			checkPluginVersion();
-			}
-		}, 200);	
-		
-
 // New function for sending the follow status via WebSocket
 function sendFollow(isFollowing) {
     if (ws && ws.readyState === WebSocket.OPEN) {

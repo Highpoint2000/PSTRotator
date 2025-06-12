@@ -5,9 +5,11 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ![image](https://github.com/user-attachments/assets/d5f9bcdd-cb5e-4767-903e-e4d30c907e31)
 
 
-## Version 2.4a
+## Version 2.4b
 
-- Important security vulnerability for admin manipulation closed
+- Admin error when logging in with the local IP fixed
+- Fixed an error when controlling as an admin outside the unlock time
+- Updated plugin info now in the web server setup
 
 ## Installation notes:
 
@@ -49,6 +51,11 @@ Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logg
 
 <details>
    <summary>History</summary>
+   
+   
+### Version 2.4a
+
+- Important security vulnerability for admin manipulation closed
 
 ### Version 2.4
 
