@@ -1,7 +1,7 @@
 (() => {
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4a)         //
+//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4b)         //
 //                                                                //
 //  by Highpoint                        last update: 28.04.25     //
 //                                                                //
