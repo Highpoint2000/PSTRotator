@@ -14,7 +14,7 @@ const RotorLimitLineColor = '#808080'; 	// automatisch via Config aktualisiert
 const RotorLimitLineAngle = 129;		// automatisch via Config aktualisiert
 const updateInfo           = true;    	// Version Check an/aus
 
-const plugin_version       = '2.4a';
+const plugin_version       = '2.4b';
 const plugin_path          = 'https://raw.githubusercontent.com/highpoint2000/PSTRotator/';
 const plugin_JSfile        = 'main/plugins/PSTRotator/pstrotator.js';
 const plugin_name          = 'PST Rotator';
