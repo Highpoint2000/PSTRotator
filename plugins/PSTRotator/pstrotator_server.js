@@ -402,14 +402,7 @@ function initializeWebSockets() {
     });
 
     externalWs.on('message', message => {
-        // Throttling: If a message was processed within the last 500 ms, ignore this one
-		
-		let now = Date.now();
-		if (now - lastMessageTimestamp < 500) {
-			return;
-		}
-		lastMessageTimestamp = now;
-
+	
         try {
             const messageObject = JSON.parse(message);
 
