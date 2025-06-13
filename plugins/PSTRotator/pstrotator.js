@@ -1,3 +1,4 @@
+
 (() => {
 ////////////////////////////////////////////////////////////////////
 //                                                                //
@@ -9,9 +10,10 @@
 //                                                                //
 ////////////////////////////////////////////////////////////////////
 
-const RotorLimitLineLength  = 67;        	// automatisch via Config aktualisiert  	
-const RotorLimitLineColor   = '#808080'; 	// automatisch via Config aktualisiert
-const RotorLimitLineAngle   = 129;		    // automatisch via Config aktualisiert
+const RotorLimitLineColor = '#808080';	// automatically updated - please do not touch!
+const RotorLimitLineAngle = 129; // automatically updated - please do not touch!
+const RotorLimitLineLength = 0; // automatically updated - please do not touch!
+
 const pluginSetupOnlyNotify	= true;		
 const CHECK_FOR_UPDATES 	= true;
 
@@ -139,7 +141,6 @@ if (CHECK_FOR_UPDATES) {
     pluginUpdateUrl
   );
 }
-
 
         // Global variable to store the IP address
         let ipAddress;
