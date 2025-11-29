@@ -7,13 +7,13 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 
 ## Version 3.0
 
-- New and secure admin authentication via web server (Replacing the modified \server\index.js file is necessary!):
+New and secure admin authentication via web server (Replacing the modified \server\index.js file is necessary!):
 
-Admin: Enables/disables the rotor, controls it independently of the lock status, and activates ES Follow Mode.
-Tune: Controls the rotor independently of the lock status.
-User: Controls the rotor only when there is no lock status.
+- Admin: Enables/disables the rotor, controls it independently of the lock status, and activates ES Follow Mode.
+- Tune: Controls the rotor independently of the lock status.
+- User: Controls the rotor only when there is no lock status.
 
-- Time control for Lock Mode revised
+Time control for Lock Mode revised
 
 ## Installation notes:
 
