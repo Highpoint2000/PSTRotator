@@ -1,10 +1,9 @@
-
 (() => {
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V2.4b)         //
+//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V3.0)          //
 //                                                                //
-//  by Highpoint                        last update: 12.06.25     //
+//  by Highpoint                        last update: 29.11.25     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -12,22 +11,25 @@
 
 const RotorLimitLineColor = '#808080';	// automatically updated - please do not touch!
 const RotorLimitLineAngle = 129; // automatically updated - please do not touch!
-const RotorLimitLineLength = 0; // automatically updated - please do not touch!
+const RotorLimitLineLength = 67; // automatically updated - please do not touch!
 
 const pluginSetupOnlyNotify	= true;		
 const CHECK_FOR_UPDATES 	= true;
 
-const pluginVersion 	   = "2.4b";
+const pluginVersion = "3.0";
 const pluginName 		   = "PST Rotator";
 const pluginHomepageUrl    = "https://github.com/Highpoint2000/PSTRotator/releases";
 const pluginUpdateUrl 	   = "https://raw.githubusercontent.com/highpoint2000/PSTRotator/main/plugins/PSTRotator/pstrotator.js" + "?_=" + new Date().getTime();
 
 const FOLLOW_PLUGIN_NAME   = 'ES Follow';
 
-let isTuneAuthenticated;
-let isAdminLoggedIn;
-let isTuneLoggedIn;
-let isLockAuthenticated;
+// Generate a unique client ID for this session to distinguish between tabs/browsers on the same IP
+const clientId = Math.random().toString(36).substring(2);
+
+let isTuneAuthenticated = false;
+let isAdminLoggedIn = false;
+let isTuneLoggedIn = false;
+let isLockAuthenticated = true; // Default to true (locked) to match HTML "locked" class
 let follow = false;  
 
 setTimeout(loadPSTRotator, 1500);
@@ -58,20 +60,21 @@ function checkUpdate(setupOnly, pluginName, urlUpdateLink, urlFetchLink) {
       }
       const text = await response.text();
 
-      // Try to extract version from known patterns
+      // Try to extract version from known patterns with robust whitespace handling
+      // Matches: const/var/let + whitespace + name + optional whitespace + = + optional whitespace + "version"
       let match = text.match(
-        /const\s+PLUGIN_VERSION\s*=\s*['"]([^'"]+)['"]/i
+        /(?:const|var|let)\s+PLUGIN_VERSION\s*=\s*['"]([^'"]+)['"]/i
       );
 
       if (!match) {
         match = text.match(
-          /const\s+pluginVersion\s*=\s*['"]([^'"]+)['"]/i
+          /(?:const|var|let)\s+pluginVersion\s*=\s*['"]([^'"]+)['"]/i
         );
       }
 
       if (!match) {
         match = text.match(
-          /const\s+plugin_version\s*=\s*['"]([^'"]+)['"]/i
+          /(?:const|var|let)\s+plugin_version\s*=\s*['"]([^'"]+)['"]/i
         );
       }
 
@@ -206,21 +209,6 @@ async function fetchIpAddress() {
   // Final fallback if everything else failed
   return host;
 }
-
-        // Function to check if the user is logged in as an administrator
-        function checkAdminMode() {
-            const bodyText = document.body.textContent || document.body.innerText;
-            isAdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as an adminstrator.");
-            isTuneLoggedIn = bodyText.includes("You are logged in and can control the receiver.");
-
-            if (isAdminLoggedIn) {
-                console.log(`Admin mode found. PSTRotator Plugin Authentication successful.`);
-                isTuneAuthenticated = true;
-            } else if (isTuneLoggedIn) {
-                console.log(`Tune mode found. PSTRotator Plugin Authentication successful.`);
-                isTuneAuthenticated = true;
-            }
-        }
 		
 // Function to update the follow button appearance based on `follow`
 function updateFollowButtonState() {
@@ -362,6 +350,7 @@ function updateFollowButtonState() {
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    cursor: pointer;
                 }
 				/* Media Query for screens narrower than 768px */
                 @media (max-width: 768px) {
@@ -526,7 +515,8 @@ function updateFollowButtonState() {
                     type: 'Rotor',
                     value: position.toString(),
                     lock: isLockAuthenticated,
-                    source: ipAddress
+                    source: ipAddress,
+                    clientId: clientId
                 });
                 ws.send(message);
                 console.log('Sent position:', message);
@@ -541,7 +531,8 @@ function updateFollowButtonState() {
                 const message = JSON.stringify({
                     type: 'Rotor',
                     lock: isLockAuthenticated,
-                    source: ipAddress
+                    source: ipAddress,
+                    clientId: clientId
                 });
                 ws.send(message);
                 console.log('Sent lock status:', message);
@@ -552,6 +543,7 @@ function updateFollowButtonState() {
 
             // Function to handle click on the canvas
             function handleCanvasClick(event) {
+                // Allow Tune Users to click even if locked
                 if (!isTuneAuthenticated && isLockAuthenticated) {
 					sendToast('warning', 'PST Rotator', 'You must be authenticated to use the PSTRotator feature!', false, false);
                     return;
@@ -585,6 +577,7 @@ function updateFollowButtonState() {
 
             // Function to handle click on the inner circle
             function handleInnerCircleClick() {
+                // Allow Tune Users to click even if locked
                 if (!isTuneAuthenticated && isLockAuthenticated) {
 					sendToast('warning', 'PST Rotator', 'You must be authenticated to use the PSTRotator feature!', false, false);
                     return;
@@ -604,9 +597,23 @@ function updateFollowButtonState() {
                     }
                 }
             }
+            
+            // Function to handle click on the lock button
+            function handleLockClick() {
+                if (!isAdminLoggedIn) {
+                    sendToast('warning', 'PST Rotator', 'You must be logged in as an administrator to change the lock status!', false, false);
+                    return;
+                }
+
+                // Toggle the lock state
+                isLockAuthenticated = !isLockAuthenticated;
+                updateLockButtonState();
+                sendLockStatus();
+            }
 
             // Function to handle mouse move over the canvas
             function handleCanvasMouseMove(event) {
+                // Allow Tune Users to hover/interact even if locked
                 if (!isTuneAuthenticated && isLockAuthenticated) {
                     return; // Do nothing if not authenticated
                 }
@@ -657,7 +664,8 @@ function updateFollowButtonState() {
                     const requestPayload = JSON.stringify({
                         type: 'Rotor',
                         value: 'request',
-                        source: ipAddress
+                        source: ipAddress,
+                        clientId: clientId
                     });
                     ws.send(requestPayload);
                     console.log('Sent:', requestPayload);
@@ -669,34 +677,56 @@ function updateFollowButtonState() {
                 const data = JSON.parse(event.data);
 
                 if (data.type === 'Rotor') {
-            // Skip messages von dir selbst
-            if (data.source === ipAddress) return;
+                    
+                    // Debug log for received message
+                    // console.log('RX Rotor:', data);
 
-            // Handle Follow-Status **immer**, nicht nur bei Änderung
-            if (typeof data.follow === 'boolean') {
-                follow = data.follow;
-                updateFollowButtonState();      // Klasse aktiv/inaktiv immer neu setzen
-            }
+                    // Update permissions based on echoed message from server (via index.js)
+                    // Only update on 'request' messages that match our unique clientId
+                    if (data.value === 'request' && data.clientId === clientId && data._auth) {
+                        isAdminLoggedIn = data._auth.admin === true;
+                        isTuneLoggedIn = data._auth.tune === true;
+                        isTuneAuthenticated = isAdminLoggedIn || isTuneLoggedIn;
+                        updateFollowButtonState();
+                        console.log('Permissions updated:', {isAdmin: isAdminLoggedIn, isTune: isTuneLoggedIn});
+                    }
+                    
+                    // Skip messages from self UNLESS it is a response containing our specific clientId.
+                    // The server response to "request" has source=ipAddress but copies the clientId.
+                    // We must allow that one through to set the initial lock/bearing state.
+                    if (data.source === ipAddress && data.clientId !== clientId) return;
 
-                    const position = parseFloat(data.value);
+                    // Handle Follow-Status **immer**, nicht nur bei Änderung
+                    if (typeof data.follow === 'boolean') {
+                        follow = data.follow;
+                        updateFollowButtonState();      // Klasse aktiv/inaktiv immer neu setzen
+                    }
+
                     const lock = data.lock;
 
-                    if (lock !== undefined && lock !== isLockAuthenticated) {
+                    if (lock !== undefined) {
+                        // FORCE update even if value looks same (to fix init sync issue)
                         isLockAuthenticated = lock;
                         updateLockButtonState();
-                        console.log(`Lock state updated to: ${isLockAuthenticated}`);
+                        console.log(`Lock state synced to: ${isLockAuthenticated}`);
                     }
 
-                    if (isNaN(position)) {
-                        console.error('Received position is not a valid number:', data.value);
-                        return;
-                    }
+                    // Only process position if it's a number and not a command like "request"
+                    // and check if value is defined (lock messages might not have it)
+                    if (data.value !== undefined && data.value !== 'request') {
+                        const position = parseFloat(data.value);
 
-                    if (position >= 0 && position <= 360) {
-                        lineAngle = position - 90;
-                        drawCircleAndLines();
-                    } else {
-                        console.warn('Received position is out of range:', position);
+                        if (isNaN(position)) {
+                            // console.warn('Received invalid position:', data.value);
+                            return;
+                        }
+
+                        if (position >= 0 && position <= 360) {
+                            lineAngle = position - 90;
+                            drawCircleAndLines();
+                        } else {
+                            console.warn('Received position is out of range:', position);
+                        }
                     }
                 }
             } catch (error) {
@@ -764,9 +794,12 @@ function updateLockButtonState() {
 
                 // Add click event listener to the inner circle
                 document.getElementById('innerCircle').addEventListener('click', handleInnerCircleClick);
+                
+                // Add click event listener to the lock button
+                document.getElementById('lockButton').addEventListener('click', handleLockClick);
 
                 loadWebSocket(); // Load WebSocket
-                checkAdminMode(); // Check admin mode
+                // checkAdminMode() removed, handled via websocket
 
                 observeColorChanges(); // Start observing CSS variable changes
 
@@ -790,7 +823,8 @@ function sendFollow(isFollowing) {
         const message = JSON.stringify({
             type: 'Rotor',
             follow: isFollowing,
-            source: ipAddress
+            source: ipAddress,
+            clientId: clientId
         });
         ws.send(message);
         console.log('Sent follow status:', message);
@@ -851,12 +885,12 @@ function sendFollow(isFollowing) {
                     clearTimeout(timer);
                     if (longPress) return;
 
-                    // Only Admin or Tune users may toggle follow mode
-                    if (!isAdminLoggedIn && !isTuneLoggedIn) {
+                    // Only Admin users may toggle follow mode (Tune removed)
+                    if (!isAdminLoggedIn) {
                         sendToast(
                             'warning',
                             FOLLOW_PLUGIN_NAME,
-                            'You must be logged in as an Admin or Tune user!',
+                            'You must be logged in as an Admin to change settings!',
                             false,
                             false
                         );

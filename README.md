@@ -5,11 +5,15 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ![image](https://github.com/user-attachments/assets/d5f9bcdd-cb5e-4767-903e-e4d30c907e31)
 
 
-## Version 2.4b
+## Version 3.0
 
-- Admin error when logging in with the local IP fixed
-- Fixed an error when controlling as an admin outside the unlock time
-- Updated plugin info now in the web server setup
+- New and secure admin authentication via web server (Replacing the modified \server\index.js file is necessary!):
+
+Admin: Enables/disables the rotor, controls it independently of the lock status, and activates ES Follow Mode.
+Tune: Controls the rotor independently of the lock status.
+User: Controls the rotor only when there is no lock status.
+
+- Time control for Lock Mode revised
 
 ## Installation notes:
 
@@ -19,10 +23,11 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 4. Enable the web server function in the [PSTRotator (AZ) software](https://www.pstrotator.com/) ---> The plugin only works with the AZ version of the PST Rotator software!)
 5. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
 6. Activate the PSTRotator plugin in the settings
-7. Stop or close the fm-dx-webserver
-8. Configure your personal settings in the automatically created pstrotator.json (in the folder: ../fm-dx-webserver-main/plugins_configs)
+7. Copy the index.js file located in the \server directory on the web server to: \server\index.js (Replace the original file!)
+8. Stop or close the fm-dx-webserver
+9. Configure your personal settings in the automatically created pstrotator.json (in the folder: ../fm-dx-webserver-main/plugins_configs)
 	- Edit the line "PSTRotatorUrl: 'http://127.0.0.1:80';" and enter the IP:Port of your PST Rotator web server
-9. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
+10. Start/Restart the fm-dx-webserver with "npm run webserver" on node.js console, check the console informations
 
 ## Configuration options:
 
@@ -46,6 +51,10 @@ The following variables can be changed in the configPlugin.json:
 
 To use the plugin effectively, you need a remote-capable rotor and the [PSTRotator (AZ) software](https://www.pstrotator.com/ ---> The plugin only works with the AZ version of the PST Rotator software!), which provides a web server. Admins can move the rotor by clicking on the degree ring or in the middle (manual input). A gray line that marks the rotor limit can also be defined in the header of the client script. If you don't want this, set the variable to 0. Using the variables lockStartTime and lockEndTime, the use of the rotor can be locked and unlocked in a time-controlled manner. To using the ES Follow Mode, you must enable ES email notifications in FMLIST. You must also enter your OMID in the plugin's configuration settings. After activating the plugin as an admin using the ES Follow button, it checks every minute for notifications for the location and automatically aligns the rotor to the received azimuth value.
 
+User Right: 
+- Admin: Enables/disables the rotor, controls it independently of the lock status, and activates ES Follow Mode.
+- Tune: Controls the rotor independently of the lock status.
+- User: Controls the rotor only when there is no lock status.
 
 Users of the [RDS-Logger plugin](https://github.com/Highpoint2000/webserver-logger) please install version 1.3h or higher!
 
@@ -57,6 +66,13 @@ If you have any questions, would like to report problems, or have suggestions fo
 
 <details>
 <summary>History</summary>
+
+### Version 2.4b
+
+- Admin error when logging in with the local IP fixed
+- Fixed an error when controlling as an admin outside the unlock time
+- Updated plugin info now in the web server setup
+
    
    
 ### Version 2.4a

@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V2.4b)         //
+//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V3.0)         //
 //                                                                //
-//  by Highpoint                        last update: 12.06.25     //
+//  by Highpoint                        last update: 29.11.25     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -168,15 +168,25 @@ const ESfollowOnStart = configPlugin.ESfollowOnStart;
 const LAST_ALERT_MINUTES = configPlugin.LAST_ALERT_MINUTES;
 const FMLIST_OMID = configPlugin.FMLIST_OMID;
 
+// Log configured lock times on startup
+if (lockStartTime && lockEndTime) {
+    logInfo(`Rotor lock schedule configured: ${lockStartTime} - ${lockEndTime} (Server Time)`);
+} else {
+    logInfo(`Rotor lock schedule not configured (always unlocked unless manual override)`);
+}
+
 // Initialize OnlyViewModus based on time-controlled locking
-let OnlyViewModus = false; // Default value; will be set by the time lock function
-let LockValue = true;      // Initial declaration
+// OnlyViewModus tracks the SCHEDULED state (true=should be locked, false=should be unlocked)
+// Initializing to null allows us to detect the first "change" on startup.
+let OnlyViewModus = null; 
+let LockValue = true;      // Initial declaration of actual lock state
 let lock = true;
 let follow = false;
 
 if (ESfollowOnStart && FMLIST_OMID !== '') {
 	LockValue = true; 
-	OnlyViewModus = true;
+	// We don't force OnlyViewModus here to avoid conflicting with time check
+    // Time check will set OnlyViewModus correctly on first run.
 	follow = true;
 	logInfo('Rotor set ES follow mode true');
 }
@@ -259,26 +269,46 @@ const externalWsUrl = `ws://127.0.0.1:${webserverPort}/data_plugins`;
 // Function to check and install missing modules (NewModules)
 const { execSync } = require('child_process');
 const NewModules = [
-    'jsdom',
+    { name: 'jsdom', version: '16.7.0' }
 ];
 
 /**
  * Checks if specific modules are installed. If not, installs them automatically.
  */
 function checkAndInstallNewModules() {
-    NewModules.forEach(module => {
-        const modulePath = path.join(__dirname, './../../node_modules', module);
+    NewModules.forEach(mod => {
+        const moduleName = mod.name;
+        const moduleVersion = mod.version;
+        const modulePath = path.join(__dirname, './../../node_modules', moduleName);
+        
+        let installNeeded = false;
+
         if (!fs.existsSync(modulePath)) {
-            console.log(`Module ${module} is missing. Installing...`);
+            console.log(`Module ${moduleName} is missing.`);
+            installNeeded = true;
+        } else {
+            // Check installed version
             try {
-                execSync(`npm install ${module}`, { stdio: 'inherit' });
-                console.log(`Module ${module} installed successfully.`);
+                const pkg = require(path.join(modulePath, 'package.json'));
+                if (pkg.version !== moduleVersion) {
+                    console.log(`Module ${moduleName} version mismatch (Found: ${pkg.version}, Required: ${moduleVersion}).`);
+                    installNeeded = true;
+                }
+            } catch (e) {
+                console.log(`Error reading ${moduleName} package.json.`);
+                installNeeded = true;
+            }
+        }
+
+        if (installNeeded) {
+             console.log(`Installing ${moduleName}@${moduleVersion}...`);
+            try {
+                execSync(`npm install ${moduleName}@${moduleVersion} --save`, { stdio: 'inherit' });
+                console.log(`Module ${moduleName} installed successfully.`);
             } catch (error) {
-                logError(`Error installing module ${module}:`, error);
+                logError(`Error installing module ${moduleName}:`, error);
                 process.exit(1); // Exit the process with an error code
             }
-        } else {
-            // console.log(`Module ${module} is already installed.`);
         }
     });
 }
@@ -343,52 +373,13 @@ const server = app.listen(port, () => {
     }, 1000); // Delay of 1000 ms
 
     // Initialize the lock based on the current time
-    checkAndUpdateLock();
+    checkAndUpdateLock(false); // No broadcast on initial start
 
     // Schedule the lock check to run every minute
-    setInterval(checkAndUpdateLock, 60 * 1000);
+    setInterval(() => {
+        checkAndUpdateLock(true); // Pass true to allow broadcasts on status change
+    }, 60 * 1000);
 });
-
-/**
- * Checks whether the given source IP address appears in the server log
- * as an administrator login. Supports both old and new formats by
- * normalizing any "::ffff:" and doing a simple substring + regex check.
- *
- * @param {string} sourceIp   – e.g. "84.181.18.10" or "::ffff:84.181.18.10"
- * @param {(err: Error|null, isAdmin: boolean) => void} callback
- */
-function isAdminLoggedIn(sourceIp, callback) {
-  const logFilePath = path.resolve(__dirname, '../../serverlog.txt');
-
-  // Strip the IPv6-embedded prefix if present
-  const normalizeIp = ip => ip.replace(/^::ffff:/, '');
-
-  fs.readFile(logFilePath, 'utf8', (err, data) => {
-    if (err) {
-      // Missing file => no admin
-      if (err.code === 'ENOENT') return callback(null, false);
-      // Other I/O error
-      return callback(err, false);
-    }
-
-    const targetIp = normalizeIp(sourceIp);
-    const lines = data.split(/\r?\n/);
-
-    for (let line of lines) {
-      // remove any ::ffff: prefixes in this line
-      const stripped = line.replace(/::ffff:/g, '');
-
-      // check for IP and the exact phrase (case-insensitive)
-      if (stripped.includes(targetIp) &&
-          /logged in as an administrator/i.test(stripped)) {
-        return callback(null, true);
-      }
-    }
-
-    callback(null, false);
-  });
-}
-
 
 /**
  * Initializes WebSocket connections for both the incoming server and outgoing external WebSocket.
@@ -405,29 +396,36 @@ function initializeWebSockets() {
 	
         try {
             const messageObject = JSON.parse(message);
+            // Debug log for only 'Rotor' messages to avoid noise
+            if (messageObject.source !== '127.0.0.1' && messageObject.type === 'Rotor') {
+                logInfo(`RX: type=${messageObject.type}, value=${messageObject.value}, source=${messageObject.source}`);
+            }
+
+            const auth = messageObject._auth || {};
+            const isAdmin = auth.admin === true;
+            const isTune = auth.tune === true;
 
             // Detect a pure "request" message
             if (messageObject.type === 'Rotor' && messageObject.value === 'request' && messageObject.source !== '127.0.0.1') {
 				
-				logInfo(`Rotor request from ${messageObject.source}`);
+				logInfo(`Rotor request from ${messageObject.source} processing...`);
 				
-                // If OnlyViewModus is active, LockValue remains true (locked)
-                if (OnlyViewModus) {
-                    LockValue = true;
-                } else {
-                    LockValue = false;
-                }
+                // Recalculate/Verify current lock state based on time logic
+                // IMPORTANT: This updates OnlyViewModus but DOES NOT override manual LockValue
+                // unless a schedule boundary was crossed just now.
+                checkAndUpdateLock(false); 
 			
                 const responseMessage = JSON.stringify({
                     type: 'Rotor',
                     value: lastBearingValue || 'No bearing data available',
                     lock: LockValue,
 					follow: follow,
-                    source: clientIp
+                    source: clientIp,
+                    clientId: messageObject.clientId // Echo clientId back
                 });
                 externalWs.send(responseMessage);
 				
-				logInfo(`Rotor responded with ${lastBearingValue}°, lock ${LockValue} and ES follow ${follow}`);			
+				logInfo(`Rotor responded to ${messageObject.source}: bearing=${lastBearingValue}, lock=${LockValue}, follow=${follow}`);			
 
             // Detect a message that is not a "request"
             } else if (
@@ -440,96 +438,67 @@ function initializeWebSockets() {
 				if ((messageObject.follow === true || messageObject.follow === false) && FMLIST_OMID !== '') {
 					
 					logInfo(`Rotor received follow request: ${messageObject.follow} from ${messageObject.source}`);
-					setFollowMode(messageObject.follow);			
+					
+                    // Only Admin is allowed to toggle follow mode now (Tune removed)
+                    if (isAdmin) {
+                        setFollowMode(messageObject.follow);			
 				
-                    const responseMessage = JSON.stringify({
-                        type: 'Rotor',
-                        value: lastBearingValue || 'No bearing data available',
-						follow: follow,
-                        source: '127.0.0.1'
-                    });
-                    
-                    externalWs.send(responseMessage);					
-					logInfo(`Rotor responded with ${lastBearingValue}° and ES follow ${follow}`);
+                        const responseMessage = JSON.stringify({
+                            type: 'Rotor',
+                            value: lastBearingValue || 'No bearing data available',
+                            follow: follow,
+                            source: '127.0.0.1'
+                        });
+                        
+                        externalWs.send(responseMessage);					
+                        logInfo(`Rotor responded with ${lastBearingValue}° and ES follow ${follow}`);
+                    } else {
+                        logError(`Rotor detects unauthorized follow request from ${messageObject.source}!`);
+                    }
 					
 				} else if ((messageObject.lock === true || messageObject.lock === false) && !messageObject.value) {
 					
 					logInfo(`Rotor received lock request: ${messageObject.lock} from ${messageObject.source}`);
 
-					// Use helper to verify admin status
-					isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
-						if (err) return;
+					if (isAdmin) {					
+                        LockValue = messageObject.lock;
+                        // Force update OnlyViewModus to match manual override if necessary, 
+                        // or simply respect the manual override until the next time check.
+                        
+                        const responseMessage = JSON.stringify({
+                            type: 'Rotor',
+                            lock: LockValue,
+                            source: '127.0.0.1'
+                        });
+                
+                        externalWs.send(responseMessage);
+                        logInfo(`Rotor responded with lock ${LockValue}`);
 
-						if (isAdmin) {
-							//logInfo('Rotor confirms admin status!');						
-							LockValue = messageObject.lock;
-
-							if (LockValue) {
-								OnlyViewModus = true;
-							}
-
-							const responseMessage = JSON.stringify({
-								type: 'Rotor',
-								lock: LockValue,
-								source: '127.0.0.1'
-							});
-                    
-							externalWs.send(responseMessage);
-							logInfo(`Rotor responded with lock ${LockValue}`);
-
-						} else {
-							logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
-
-						}
-
-					});					
+                    } else {
+                        logError(`Rotor detects unauthorized lock request from ${messageObject.source}!`);
+                    }			
 				
                 // We have a specified angle (bearing)
                 } else {		
 					if (messageObject.lock === false) {
-						OnlyViewModus = false;
+                        // If client sends lock=false, they think it's unlocked. 
+                        // Server state is authority.
 					}
-                    // Check if LockValue is true (if LockValue = true => rotation allowed)
+                    
+                    // If Locked (either manually or by timer)
                     if (LockValue) {
-
-					    logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
-						
-                        // Path to the log file
-                        const fs = require('fs');
-                        const path = require('path');
-                        const logFilePath = path.join(__dirname, './../../serverlog.txt');
-
-						// Use helper to verify admin status
-						isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
-						if (err) return;
-
-						if (isAdmin) {
-							//logInfo('Rotor confirms admin status!');
-							updatePstRotator(messageObject.value);
-						} else {
-							logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
-						}
-
-						});
-
-                    } else {
-                        // If LockValue = false but OnlyViewModus = false => rotate anyway
-                        if (!OnlyViewModus && !LockValue) {
-							updatePstRotator(messageObject.value);												
+                        // Tune users can now rotate even if locked
+                        if (isAdmin || isTune) {
+                            // Admin and Tune can always rotate
+                            updatePstRotator(messageObject.value);
+                            logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
                         } else {
-							// Use helper to verify admin status
-							isAdminLoggedIn(messageObject.source, (err, isAdmin) => {
-								if (err) return;
-
-								if (isAdmin) {
-									//logInfo('Rotor confirms admin status!');
-									updatePstRotator(messageObject.value);
-								} else {
-									logError(`Rotor detects manipulation of admin status from ${messageObject.source}!`);
-								}
-
-							});		
-						}
+                            logError(`Rotor detects unauthorized rotation attempt from ${messageObject.source}!`);
+                        }
+                    } else {
+                        // Unlocked - anyone can rotate
+                        updatePstRotator(messageObject.value);
+                        logInfo(`Rotor request to turn to ${messageObject.value}° from ${messageObject.source}`);
                     }
                 }
             }
@@ -646,21 +615,22 @@ async function updatePstRotator(value) {
 
 /**
  * Checks the current time against lockStartTime and lockEndTime,
- * updates OnlyViewModus and LockValue accordingly,
- * logs the new state, and broadcasts it via WebSocket.
+ * updates OnlyViewModus (scheduled state) and LockValue accordingly.
+ * 
+ * IMPORTANT: Manual overrides of LockValue are preserved until the 
+ * schedule (OnlyViewModus) actually CHANGES (e.g. crossing 08:00 or 00:00).
  *
- * @param {boolean} forceBroadcast – if true, always send an update
- *                                   even if the lock state hasn’t changed
+ * @param {boolean} allowBroadcast – if true, send broadcast if status CHANGED
  */
-function checkAndUpdateLock(forceBroadcast = false) {
+function checkAndUpdateLock(allowBroadcast = false) {
   // If either lock time is unset, disable locking entirely
   if (!lockStartTime || !lockEndTime) {
     if (OnlyViewModus !== false) {
       OnlyViewModus = false;
       LockValue = false;
       logInfo('OnlyViewModus disabled because lockStartTime or lockEndTime is not set.');
-      // Broadcast even if nothing changed, if forced
-      if (forceBroadcast) {
+      // Broadcast change
+      if (allowBroadcast) {
         broadcastLockState();
       }
     }
@@ -681,11 +651,13 @@ function checkAndUpdateLock(forceBroadcast = false) {
     startH < 0 || startH > 23 || endH < 0 || endH > 23 ||
     startM < 0 || startM > 59 || endM < 0 || endM > 59
   ) {
-    logError('Invalid lockStartTime or lockEndTime format. Disabling lock.');
-    OnlyViewModus = false;
-    LockValue     = false;
-    if (forceBroadcast) {
-      broadcastLockState();
+    if (OnlyViewModus !== false) {
+        logError('Invalid lockStartTime or lockEndTime format. Disabling lock.');
+        OnlyViewModus = false;
+        LockValue     = false;
+        if (allowBroadcast) {
+            broadcastLockState();
+        }
     }
     return;
   }
@@ -703,15 +675,28 @@ function checkAndUpdateLock(forceBroadcast = false) {
     shouldLock = currentMinutes >= startMinutes || currentMinutes < endMinutes;
   }
 
-  const prevMode = OnlyViewModus;
+  const prevTimeBasedState = OnlyViewModus;
+  
+  // Update time-based state tracker
   OnlyViewModus = shouldLock;
-  LockValue     = OnlyViewModus;
 
-  // If state changed or a forced broadcast is requested
-  if (forceBroadcast || prevMode !== OnlyViewModus) {
-    logInfo(`OnlyViewModus is now ${OnlyViewModus} (current time: ${now.toLocaleTimeString()}).`);
-    broadcastLockState();
+  // Update actual LockValue ONLY if the schedule state has changed (e.g. time boundary crossed)
+  // OR if this is the first run (prevTimeBasedState is null).
+  if (prevTimeBasedState !== shouldLock) {
+      LockValue = shouldLock;
+      
+      if (prevTimeBasedState !== null) {
+          logInfo(`Schedule boundary crossed (Time: ${now.toLocaleTimeString()}). Switching LockValue to ${LockValue} (Schedule: ${prevTimeBasedState} -> ${shouldLock}).`);
+          if (allowBroadcast) {
+              broadcastLockState();
+          }
+      } else {
+          // First run initialization
+          logInfo(`Startup time check (Time: ${now.toLocaleTimeString()}). Initializing LockValue to ${LockValue}.`);
+      }
   }
+  // Else: We do nothing. If LockValue differs from shouldLock (due to manual override),
+  // we let it stay that way until the next schedule boundary event.
 }
 
 /**
@@ -836,12 +821,3 @@ async function fetchESAzimuth() {
     //logError(`ES Follow: Error fetching/parsing OMID ${FMLIST_OMID}: ${err.message}`);
   }
 }
-
-
-
-
-
-
-
-
-
