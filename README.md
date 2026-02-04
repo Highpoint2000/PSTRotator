@@ -29,10 +29,10 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 The following variables can be changed in the configPlugin.json:
 
 	PSTRotatorUrl: 'http://127.0.0.1:80', 	// Base URL for the PST Rotator software
-	port: 3000, 				// Port for the internal CORS Proxy (default: 3000)
-	RotorLimitLineLength: 0,		// Set the length of the line (default: 67, none: 0)
-   	RotorLimitLineAngle: 129, 		// Set the angle of the line (e.g., 180)
-	RotorLimitLineColor:'#808080', 		// Set the color for the additional line (default: #808080)
+	port: 3000, 							// Port for the internal CORS Proxy (default: 3000)
+	RotorLimitLineLength: 0,				// Set the length of the line (default: 67, none: 0)
+   	RotorLimitLineAngle: 129, 				// Set the angle of the line (e.g., 180)
+	RotorLimitLineColor:'#808080', 			// Set the color for the additional line (default: #808080)
 	lockStartTime: '',                      // Start time for locking in HH:MM format (empty means no locking / 00:00 = 24h lock)
     lockEndTime: ''                         // End time for locking in HH:MM format (empty means no locking) / 00:00 = 24h lock)
 
@@ -40,7 +40,7 @@ The following variables can be changed in the configPlugin.json:
 
 	ESfollowOnStart: false,			// Set true or false for automatic start ES follow mode
 	LAST_ALERT_MINUTES: 15,			// Enter the time in minutes for processing the last message when starts the server (default is 15)
-	FMLIST_OMID:''				// Set your OMID to use the ES follow mode
+	FMLIST_OMID:''					// Set your OMID to use the ES follow mode
 
 ## Notes: 
 
