@@ -1,9 +1,9 @@
 (() => {
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V3.0)          //
+//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V3.0a)         //
 //                                                                //
-//  by Highpoint                        last update: 29.11.25     //
+//  by Highpoint                        last update: 03.02.26     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -16,7 +16,7 @@ const RotorLimitLineLength = 67; // automatically updated - please do not touch!
 const pluginSetupOnlyNotify	= true;		
 const CHECK_FOR_UPDATES 	= true;
 
-const pluginVersion = "3.0";
+const pluginVersion = "3.0a";
 const pluginName 		   = "PST Rotator";
 const pluginHomepageUrl    = "https://github.com/Highpoint2000/PSTRotator/releases";
 const pluginUpdateUrl 	   = "https://raw.githubusercontent.com/highpoint2000/PSTRotator/main/plugins/PSTRotator/pstrotator.js" + "?_=" + new Date().getTime();
@@ -32,7 +32,7 @@ let isTuneLoggedIn = false;
 let isLockAuthenticated = true; // Default to true (locked) to match HTML "locked" class
 let follow = false;  
 
-setTimeout(loadPSTRotator, 1500);
+setTimeout(loadPSTRotator, 1000);
 function loadPSTRotator() {
 
 /* =================================================================== *
@@ -223,12 +223,50 @@ function updateFollowButtonState() {
             // Add CSS styles
             const style = document.createElement('style');
             style.textContent = `
+                /* ==========================================================================
+                   FIX: INTERACTION ISSUES & CANVAS WIDTH
+                   ========================================================================== */
+                
+                /* 1. Lift the play button container above the rotator layer */
+                .panel-75, .panel-10, .playbutton {
+                    position: relative !important;
+                    z-index: 2147483647 !important; /* Max Z-Index */
+                }
+                
+                /* 2. Make the Rotator Container pass-through for clicks */
+                #containerRotator, 
+                #backgroundRotator { 
+                    pointer-events: none !important;
+                    z-index: 10;
+                }
+
+                /* 3. Re-enable interaction ONLY for the actual shapes */
+                #CanvasRotator {
+                    pointer-events: auto !important;
+                    cursor: pointer !important;
+                    /* CRITICAL FIX: Cuts off the invisible square corners of the canvas */
+                    clip-path: circle(49% at 50% 50%); 
+                }
+                
+                #innerCircle, 
+                #lockButton,
+                #lockIcon {
+                    pointer-events: auto !important;
+                    cursor: pointer !important;
+                }
+
+                /* 4. Canvas Width (User Setting: 83%) */
                 #signal-canvas {
-                    width: 82%;
+                    width: 83% !important;
                     margin-left: 200px;
                     margin-top: 0px;
                     height: 170px;
                 }
+
+                /* ==========================================================================
+                   ROTATOR LAYOUT STYLES
+                   ========================================================================== */
+
                 #containerRotator {
                     position: relative;
                     margin-top: 0px;
@@ -430,17 +468,6 @@ function updateFollowButtonState() {
                 } else {
                     console.error('Required elements not found.');
                 }
-            }
-
-            // Load a script dynamically
-            function loadScript(url, callback) {
-                const script = document.createElement('script');
-                script.src = url;
-                script.onload = callback;
-                script.onerror = () => {
-                    console.error(`Failed to load script: ${url}`);
-                };
-                document.head.appendChild(script);
             }
 
             // Function to draw the circle and lines on the canvas
@@ -770,6 +797,23 @@ function updateLockButtonState() {
     }
 }
 
+            // Load a script dynamically
+            function loadScript(url, callback) {
+                // Check if script is already loaded
+                if (window.jQuery && url.includes('jquery')) {
+                    console.log('jQuery already loaded, skipping download.');
+                    callback();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = callback;
+                script.onerror = () => {
+                    console.error(`Failed to load script: ${url}`);
+                };
+                document.head.appendChild(script);
+            }
 
             // Main function to initialize the plugin
             function main() {
@@ -783,20 +827,23 @@ function updateLockButtonState() {
                 addHtmlElements(); // Add HTML elements
 
                 canvas = $('#CanvasRotator')[0]; // Get canvas element
-                ctx = canvas.getContext('2d'); // Set ctx in global scope
+                if (canvas) {
+                    ctx = canvas.getContext('2d'); // Set ctx in global scope
+                    x = canvas.width / 2;
+                    y = canvas.height / 2;
 
-                x = canvas.width / 2;
-                y = canvas.height / 2;
-
-                canvas.addEventListener('click', handleCanvasClick);
-                canvas.addEventListener('mousemove', handleCanvasMouseMove);
-                canvas.addEventListener('mouseout', handleCanvasMouseOut);
+                    canvas.addEventListener('click', handleCanvasClick);
+                    canvas.addEventListener('mousemove', handleCanvasMouseMove);
+                    canvas.addEventListener('mouseout', handleCanvasMouseOut);
+                }
 
                 // Add click event listener to the inner circle
-                document.getElementById('innerCircle').addEventListener('click', handleInnerCircleClick);
+                const innerCircle = document.getElementById('innerCircle');
+                if (innerCircle) innerCircle.addEventListener('click', handleInnerCircleClick);
                 
                 // Add click event listener to the lock button
-                document.getElementById('lockButton').addEventListener('click', handleLockClick);
+                const lockButton = document.getElementById('lockButton');
+                if (lockButton) lockButton.addEventListener('click', handleLockClick);
 
                 loadWebSocket(); // Load WebSocket
                 // checkAdminMode() removed, handled via websocket
@@ -806,14 +853,21 @@ function updateLockButtonState() {
                 // Initial drawing
                 drawCircleAndLines();
 
-                // Show the rotor after 300 ms
+                // Show the rotor after 500 ms
                 setTimeout(() => {
-                    document.getElementById('containerRotator').classList.add('visible');
+                    const container = document.getElementById('containerRotator');
+                    if (container) container.classList.add('visible');
                 }, 500);
             }
 
-            // Load jQuery and execute the main function
-            loadScript(JQUERY_URL, main);
+            // FIX: Check if jQuery is already present before loading it again
+            if (window.jQuery) {
+                console.log('Using existing jQuery for PSTRotator.');
+                main();
+            } else {
+                console.log('Loading jQuery for PSTRotator...');
+                loadScript(JQUERY_URL, main);
+            }
 
         })();
 		

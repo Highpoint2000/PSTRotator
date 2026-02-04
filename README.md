@@ -5,15 +5,10 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ![image](https://github.com/user-attachments/assets/d5f9bcdd-cb5e-4767-903e-e4d30c907e31)
 
 
-## Version 3.0
+## Version 3.0a
 
-New and secure admin authentication via web server (Replacing the modified \server\index.js file is necessary!):
-
-- Admin: Enables/disables the rotor, controls it independently of the lock status, and activates ES Follow Mode.
-- Tune: Controls the rotor independently of the lock status.
-- User: Controls the rotor only when there is no lock status.
-
-Time control for Lock Mode revised
+- Problems with the blocked play button resolved
+- Signal Canvas is now fully displayed.
 
 ## Installation notes:
 
@@ -66,6 +61,16 @@ If you have any questions, would like to report problems, or have suggestions fo
 
 <details>
 <summary>History</summary>
+
+### Version 3.0
+
+New and secure admin authentication via web server (Replacing the modified \server\index.js file is necessary!):
+
+- Admin: Enables/disables the rotor, controls it independently of the lock status, and activates ES Follow Mode.
+- Tune: Controls the rotor independently of the lock status.
+- User: Controls the rotor only when there is no lock status.
+
+Time control for Lock Mode revised
 
 ### Version 2.4b
 
