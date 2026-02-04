@@ -8,7 +8,7 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ## Version 3.0a
 
 - Problems with the blocked play button resolved
-- Signal Canvas is now fully displayed.
+- Signal Canvas is now fully displayed
 
 ## Installation notes:
 
