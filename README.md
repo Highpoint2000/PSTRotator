@@ -5,10 +5,9 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ![image](https://github.com/user-attachments/assets/d5f9bcdd-cb5e-4767-903e-e4d30c907e31)
 
 
-## Version 3.0a
+## Version 3.0b
 
-- Problems with the blocked play button resolved
-- Signal Canvas is now fully displayed
+- Fixed a problem with the web server elements being covered up
 
 ## Installation notes:
 
@@ -61,6 +60,11 @@ If you have any questions, would like to report problems, or have suggestions fo
 
 <details>
 <summary>History</summary>
+
+### Version 3.0a
+
+- Problems with the blocked play button resolved
+- Signal Canvas is now fully displayed
 
 ### Version 3.0
 

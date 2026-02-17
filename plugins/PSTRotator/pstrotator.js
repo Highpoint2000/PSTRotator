@@ -1,9 +1,9 @@
 (() => {
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V3.0a)         //
+//  PST ROTATOR CLIENT SCRIPT FOR FM-DX-WEBSERVER (V3.0b)         //
 //                                                                //
-//  by Highpoint                        last update: 03.02.26     //
+//  by Highpoint                        last update: 17.02.26     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -16,7 +16,7 @@ const RotorLimitLineLength = 67; // automatically updated - please do not touch!
 const pluginSetupOnlyNotify	= true;		
 const CHECK_FOR_UPDATES 	= true;
 
-const pluginVersion = "3.0a";
+const pluginVersion = "3.0b";
 const pluginName 		   = "PST Rotator";
 const pluginHomepageUrl    = "https://github.com/Highpoint2000/PSTRotator/releases";
 const pluginUpdateUrl 	   = "https://raw.githubusercontent.com/highpoint2000/PSTRotator/main/plugins/PSTRotator/pstrotator.js" + "?_=" + new Date().getTime();
@@ -230,7 +230,7 @@ function updateFollowButtonState() {
                 /* 1. Lift the play button container above the rotator layer */
                 .panel-75, .panel-10, .playbutton {
                     position: relative !important;
-                    z-index: 2147483647 !important; /* Max Z-Index */
+                    z-index: 10 !important; /* Z-Index */
                 }
                 
                 /* 2. Make the Rotator Container pass-through for clicks */
