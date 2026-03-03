@@ -5,7 +5,7 @@ This plugin provides a graphical azimuth display (rotor view) with interactive c
 ![image](https://github.com/user-attachments/assets/d5f9bcdd-cb5e-4767-903e-e4d30c907e31)
 
 
-## Version 3.1
+## Version 3.1 (Compatible with web server version 1.4.0 and higher)
 
 - For admin authentication, index.js is now automatically patched, and a backup copy is created.
 
