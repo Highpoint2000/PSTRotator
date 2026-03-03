@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V3.0b)         //
+//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V3.1)          //
 //                                                                //
-//  by Highpoint                        last update: 17.02.26     //
+//  by Highpoint                        last update: 03.03.26     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -15,6 +15,83 @@ const { logInfo, logError } = require('./../../server/console');
 // Define source and target paths for rotor.png
 const sourceImagePath = path.join(__dirname, 'rotor.png');
 const targetImagePath = path.join(__dirname, './../../web/images/rotor.png');
+// Define path to main server file
+const mainServerPath = path.join(__dirname, './../../server/index.js'); 
+
+/**
+ * AUTOMATIC PATCHING SYSTEM
+ * Checks if index.js passes auth data to plugins and patches it if missing.
+ */
+function patchMainServer() {
+    if (!fs.existsSync(mainServerPath)) {
+        logError(`PST Rotator: Could not find main server file at ${mainServerPath}`);
+        return;
+    }
+
+    let serverCode = fs.readFileSync(mainServerPath, 'utf8');
+    let modified = false;
+
+    // 1. Patch the Upgrade Request (to attach session data to WS object)
+    // We look for: pluginsWss.handleUpgrade(request, socket, head, (ws) => {
+    const upgradePattern = /pluginsWss\.handleUpgrade\(request,\s*socket,\s*head,\s*\(ws\)\s*=>\s*\{/;
+    const upgradePatch = `
+      // PATCH: Inject Auth Session Data
+      if (request.session) {
+          ws.isAdmin = request.session.isAdminAuthenticated === true;
+          ws.isTune = request.session.isTuneAuthenticated === true;
+      }
+      // END PATCH
+    `;
+
+    if (upgradePattern.test(serverCode) && !serverCode.includes('ws.isAdmin = request.session.isAdminAuthenticated')) {
+        // Find the position to insert
+        serverCode = serverCode.replace(upgradePattern, `pluginsWss.handleUpgrade(request, socket, head, (ws) => {${upgradePatch}`);
+        modified = true;
+        logInfo('PST Rotator: Injected Session logic into WebSocket Upgrade handler.');
+    }
+
+    // 2. Patch the Message Handler (to send auth data to plugin)
+    // We look for where JSON.parse happens inside pluginsWss.on('connection')
+    const messagePattern = /messageData\s*=\s*JSON\.parse\((?:message|raw)\);/;
+    const authPatch = `
+            // PATCH: PSTRotator Auth Injection
+            if (messageData && typeof ws.isAdmin !== 'undefined') {
+                messageData._auth = { 
+                    admin: ws.isAdmin || false, 
+                    tune: ws.isTune || false 
+                };
+            }
+            // END PATCH
+    `;
+
+    if (messagePattern.test(serverCode) && !serverCode.includes('PSTRotator Auth Injection')) {
+        serverCode = serverCode.replace(messagePattern, `messageData = JSON.parse(message);${authPatch}`);
+        modified = true;
+        logInfo('PST Rotator: Injected Auth data logic into WebSocket Message handler.');
+    }
+
+    if (modified) {
+        try {
+            // Create backup
+            fs.copyFileSync(mainServerPath, `${mainServerPath}.bak`);
+            // Write changes
+            fs.writeFileSync(mainServerPath, serverCode, 'utf8');
+            logInfo('PST Rotator: Main server file (index.js) patched successfully.');
+            logInfo('WARNING: YOU MUST RESTART THE SERVER FOR CHANGES TO TAKE EFFECT.');
+        } catch (e) {
+            logError('PST Rotator: Failed to write patch to index.js', e);
+        }
+    } else {
+        // logInfo('PST Rotator: Main server file is already patched or compatible.');
+    }
+}
+
+// Run the patch check immediately on startup
+try {
+    patchMainServer();
+} catch (e) {
+    logError('PST Rotator: Error running auto-patcher:', e);
+}
 
 /**
  * Copies rotor.png to the target directory if it does not already exist.
