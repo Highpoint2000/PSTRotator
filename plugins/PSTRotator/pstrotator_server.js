@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
 //                                                                //
-//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V3.1)          //
+//  PST ROTATOR SERVER SCRIPT FOR FM-DX-WEBSERVER (V3.1a)         //
 //                                                                //
-//  by Highpoint                        last update: 03.03.26     //
+//  by Highpoint                        last update: 21.03.26     //
 //                                                                //
 //  https://github.com/Highpoint2000/PSTRotator                   //
 //                                                                //
@@ -843,7 +843,11 @@ async function fetchESAzimuth() {
 
   const url = `https://www.fmlist.org/esapi/es${FMLIST_OMID}.json?cb=${Date.now()}`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+      }
+    });
     if (!res.ok) {
       logError(`ES Follow: HTTP ${res.status} when fetching OMID ${FMLIST_OMID}`);
       return;
